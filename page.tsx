@@ -9,7 +9,7 @@ export default function Portfolio() {
       {/* Navigation Bar */}
       <nav className="fixed top-0 w-full bg-gray-900/95 backdrop-blur-xl border-b border-yellow-400/20 z-50 transition-all duration-300 shadow-2xl">
         <div className="container px-4 md:px-6 py-5 flex justify-between items-center">
-          <h1 className="text-2xl font-black text-white tracking-tight">Nitish<span className="text-red-600">.DEV</span></h1>
+          <h1 className="text-2xl font-black text-white tracking-tight">Nitish<span className="text-red-600">.Chunduru</span></h1>
           <div className="hidden md:flex gap-8 items-center">
             <a href="#about" className="text-gray-300 hover:text-yellow-400 transition-colors duration-300 font-bold relative group">
               About

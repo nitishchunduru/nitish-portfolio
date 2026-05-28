@@ -1,0 +1,157 @@
+================================================================================
+                        NITISH CHUNDURU
+                     SAP MM CONSULTANT
+                     
+Email: chundurunitish2001@gmail.com | Phone: +91 8074300526
+LinkedIn: https://www.linkedin.com/in/nitish-chunduru/
+Location: India
+================================================================================
+
+PROFESSIONAL SUMMARY
+================================================================================
+Enterprise resource planning specialist with 1+ year of hands-on experience in
+SAP S4HANA migration, materials management, and procurement processes. Proven
+expertise in delivering complex technical solutions with focus on optimization
+and process efficiency. Dedicated professional committed to excellence in
+enterprise resource planning and business transformation.
+
+================================================================================
+CORE COMPETENCIES
+================================================================================
+
+SAP Systems:
+  • SAP Materials Management (MM)
+  • SAP S4HANA
+  • SAP Fiori
+  • SAP ERP
+
+Materials Management:
+  • Procurement Management
+  • Procure-to-Pay (P2P) Cycle
+  • Purchase Orders (PO)
+  • Goods Receipt (GR)
+  • Goods Issue (GI)
+  • Inventory Management
+
+Process Expertise:
+  • Inventory Management
+  • Material Master Data
+  • Vendor Management
+  • Process Optimization
+
+System Integration:
+  • SAP Sales & Distribution (SD) Integration
+  • SAP Finance (FI) Integration
+  • Data Synchronization
+  • API Integration
+
+Implementation:
+  • S4HANA Migration
+  • System Testing
+  • Data Validation
+  • Production Support
+
+Business Skills:
+  • Problem Solving
+  • Process Optimization
+  • Technical Documentation
+  • Team Collaboration
+  • Training & Knowledge Transfer
+
+================================================================================
+PROFESSIONAL EXPERIENCE
+================================================================================
+
+SAP MM INTERN TRAINEE CONSULTANT
+Proven Tech
+Aug 2025 - Present (1 Year)
+
+Key Responsibilities & Achievements:
+  • Supported SAP S4HANA migration and MM support activities in live
+    production environments
+  • Worked on PR, PO, GR, GI, and inventory management processes with
+    complete lifecycle understanding
+  • Assisted in MM master data validation, maintenance, and issue resolution
+    during migration phases
+  • Supported procurement and post-migration support activities ensuring
+    smooth system transition
+
+COHANCE MIGRATION SUPPORT PROJECT
+Featured Project - S4HANA Migration
+
+Project Overview:
+Led comprehensive SAP MM migration activities for procurement and inventory
+management processes. Executed data validation testing, managed Purchase Order
+processing, and resolved critical inventory issues during migration support phase.
+
+Key Achievements:
+  • Executed detailed MM master data validation during migration
+  • Managed Purchase Order and GR/GI transaction processing
+  • Identified and resolved inventory management issues
+  • Ensured post-migration system stability and compliance
+
+================================================================================
+EDUCATION
+================================================================================
+
+BACHELOR OF TECHNOLOGY - COMPUTER SCIENCE & ENGINEERING
+Bapatla Engineering College
+2019 - 2023
+CGPA: 7.5
+
+INTERMEDIATE
+Pamulapati Butchi Naidu College
+2017 - 2019
+GPA: 7.5
+
+HIGH SCHOOL
+NNT Public School
+2016 - 2017
+GPA: 8.8
+
+================================================================================
+CERTIFICATIONS & TRAINING
+================================================================================
+
+  • Business Processes in SAP S4HANA - SAP Learning (Completed)
+  • Exploring SAP Cloud ERP - SAP Learning (Completed)
+  • SAP Ariba Sourcing Overview - SAP Learning (Completed)
+  • TCS iON Career Edge - Young Professional Program
+    Tata Consultancy Services (Verified)
+
+================================================================================
+TECHNICAL SKILLS
+================================================================================
+
+ERP Systems:        SAP S4HANA, SAP ERP, SAP Fiori
+Modules:            SAP MM, SAP SD, SAP FI
+Programming:        Basic SQL, Data Analysis
+Tools:              SAP Fiori Apps, Crystal Reports
+Soft Skills:        Documentation, Problem-Solving, Communication
+
+================================================================================
+CAREER OBJECTIVES
+================================================================================
+
+Seeking challenging SAP MM consulting opportunities in enterprise transformation
+and S4HANA migration projects. Committed to professional growth and delivering
+value through technical expertise in materials management and procurement
+optimization.
+
+================================================================================
+ADDITIONAL INFORMATION
+================================================================================
+
+Languages:     English, Telugu
+Availability:  Immediate
+Visa Status:   Open to relocation
+
+================================================================================
+REFERENCES
+================================================================================
+
+Available upon request
+
+================================================================================
+Last Updated: May 2025
+================================================================================

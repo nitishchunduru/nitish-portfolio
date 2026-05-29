@@ -23,11 +23,17 @@ const personalDetails = {
   github: "https://github.com/nitishchunduru",
 };
 
+// Format date consistently to avoid hydration mismatch
+const getFormattedDate = () => {
+  const date = new Date();
+  return date.toISOString().split('T')[0]; // Returns YYYY-MM-DD
+};
+
 export default function Portfolio() {
   const [resumeFile, setResumeFile] = useState(null);
   const [resumeMetadata, setResumeMetadata] = useState({
     name: "Nitish_Chunduru_SAP_MM_Resume.pdf",
-    uploadDate: new Date().toLocaleDateString(),
+    uploadDate: getFormattedDate(),
     fileSize: "2.4 MB"
   });
 
@@ -37,7 +43,7 @@ export default function Portfolio() {
       setResumeFile(file);
       setResumeMetadata({
         name: file.name,
-        uploadDate: new Date().toLocaleDateString(),
+        uploadDate: getFormattedDate(),
         fileSize: (file.size / (1024 * 1024)).toFixed(2) + " MB"
       });
     }
@@ -63,7 +69,7 @@ export default function Portfolio() {
     setResumeFile(null);
     setResumeMetadata({
       name: "Nitish_Chunduru_SAP_MM_Resume.pdf",
-      uploadDate: new Date().toLocaleDateString(),
+      uploadDate: getFormattedDate(),
       fileSize: "2.4 MB"
     });
   };

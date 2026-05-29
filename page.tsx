@@ -1,10 +1,30 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Linkedin, Mail, Phone, Download, ChevronDown, ArrowRight, Github, FileText, Trash2, Eye, Settings, Moon, Sun, Upload, X, Check } from "lucide-react"
+import { useState, useEffect, useRef } from 'react'
+import { Linkedin, Mail, Phone, Download, ChevronDown, ArrowRight, Github, FileText, Trash2, Eye, Settings, Moon, Sun, Upload, X, Check, ZoomIn, ZoomOut, Move } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+
+// Bootstrap Icons mapping
+const bootstrapIcons = {
+  'SAP MM': 'bi-box-seam',
+  'Procurement': 'bi-cart-check',
+  'Purchase Orders': 'bi-file-earmark-text',
+  'Inventory': 'bi-archive',
+  'Goods Receipt': 'bi-box-arrow-in-down',
+  'Goods Issue': 'bi-box-arrow-up',
+  'Vendor Management': 'bi-people',
+  'SAP Fiori': 'bi-grid-3x3-gap',
+  'Data Validation': 'bi-check2-circle',
+  'Testing': 'bi-clipboard-check',
+  'Documentation': 'bi-journal-text',
+  'Analytics': 'bi-bar-chart',
+  'Contact': 'bi-envelope',
+  'Phone': 'bi-telephone',
+  'LinkedIn': 'bi-linkedin',
+  'GitHub': 'bi-github'
+};
 
 // Configuration Objects (Frontend-managed)
 const profileConfig = {
@@ -53,9 +73,20 @@ const storageUtils = {
       localStorage.setItem('profileImage', imageData);
     }
   },
+  getProfileSettings: () => {
+    if (typeof window === 'undefined') return { zoom: 1, positionX: 0, positionY: 0 };
+    const stored = localStorage.getItem('profileSettings');
+    return stored ? JSON.parse(stored) : { zoom: 1, positionX: 0, positionY: 0 };
+  },
+  setProfileSettings: (settings) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('profileSettings', JSON.stringify(settings));
+    }
+  },
   deleteProfileImage: () => {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('profileImage');
+      localStorage.removeItem('profileSettings');
     }
   },
   getPersonalDetails: () => {
@@ -77,6 +108,15 @@ const storageUtils = {
     if (typeof window !== 'undefined') {
       localStorage.setItem('resumeConfig', JSON.stringify(config));
     }
+  },
+  getIsAdmin: () => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem('isAdmin') === 'true';
+  },
+  setIsAdmin: (isAdmin) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('isAdmin', isAdmin ? 'true' : 'false');
+    }
   }
 };
 
@@ -84,7 +124,12 @@ export default function Portfolio() {
   // State management
   const [theme, setTheme] = useState('light');
   const [showAdminPanel, setShowAdminPanel] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [profileImage, setProfileImage] = useState(null);
+  const [profileSettings, setProfileSettings] = useState({ zoom: 1, positionX: 0, positionY: 0 });
+  const [showImageEditor, setShowImageEditor] = useState(false);
+  const [tempImageData, setTempImageData] = useState(null);
+  const [tempImageSettings, setTempImageSettings] = useState({ zoom: 1, positionX: 0, positionY: 0 });
   const [details, setDetails] = useState(personalDetails);
   const [resumeConfig_, setResumeConfig_] = useState(resumeConfig);
   const [resumeFile, setResumeFile] = useState(null);
@@ -95,42 +140,48 @@ export default function Portfolio() {
   });
   const [notification, setNotification] = useState(null);
   const [adminFormData, setAdminFormData] = useState(personalDetails);
+  const imageCanvasRef = useRef(null);
 
   // Initialize theme and load data on mount
   useEffect(() => {
     const savedTheme = storageUtils.getTheme();
     setTheme(savedTheme);
-    document.documentElement.setAttribute('data-theme', savedTheme);
-    
     const savedImage = storageUtils.getProfileImage();
-    if (savedImage) {
-      setProfileImage(savedImage);
-    }
-    
+    setProfileImage(savedImage);
+    const savedSettings = storageUtils.getProfileSettings();
+    setProfileSettings(savedSettings);
     const savedDetails = storageUtils.getPersonalDetails();
     setDetails(savedDetails);
-    setAdminFormData(savedDetails);
-    
     const savedResumeConfig = storageUtils.getResumeConfig();
     setResumeConfig_(savedResumeConfig);
+    const savedIsAdmin = storageUtils.getIsAdmin();
+    setIsAdmin(savedIsAdmin);
+    setAdminFormData(savedDetails);
   }, []);
 
-  // Theme toggle
+  // Update document theme
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      if (theme === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+      storageUtils.setTheme(theme);
+    }
+  }, [theme]);
+
   const toggleTheme = () => {
     const newTheme = theme === 'light' ? 'dark' : 'light';
     setTheme(newTheme);
-    storageUtils.setTheme(newTheme);
-    document.documentElement.setAttribute('data-theme', newTheme);
-    showNotification('Theme updated');
   };
 
-  // Notification system
   const showNotification = (message) => {
     setNotification(message);
     setTimeout(() => setNotification(null), 3000);
   };
 
-  // Profile image upload
+  // Enhanced Profile Image Upload with Editor
   const handleProfileImageUpload = (e) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -139,32 +190,54 @@ export default function Portfolio() {
         return;
       }
       if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-        showNotification('Only JPG, PNG, and WebP are supported');
+        showNotification('Only JPG, PNG, and WebP formats allowed');
         return;
       }
+
       const reader = new FileReader();
       reader.onload = (event) => {
-        setProfileImage(event.target.result);
-        storageUtils.setProfileImage(event.target.result);
-        showNotification('Profile image updated');
+        setTempImageData(event.target.result);
+        setTempImageSettings({ zoom: 1, positionX: 0, positionY: 0 });
+        setShowImageEditor(true);
       };
       reader.readAsDataURL(file);
     }
   };
 
-  // Profile image delete
-  const handleDeleteProfileImage = () => {
-    setProfileImage(null);
-    storageUtils.deleteProfileImage();
-    showNotification('Profile image deleted');
+  const saveProfileImage = () => {
+    if (tempImageData) {
+      storageUtils.setProfileImage(tempImageData);
+      storageUtils.setProfileSettings(tempImageSettings);
+      setProfileImage(tempImageData);
+      setProfileSettings(tempImageSettings);
+      setShowImageEditor(false);
+      setTempImageData(null);
+      showNotification('Profile image updated successfully');
+    }
   };
 
-  // Resume upload
+  const resetImagePosition = () => {
+    setTempImageSettings({ zoom: 1, positionX: 0, positionY: 0 });
+  };
+
+  const deleteProfileImage = () => {
+    if (confirm('Are you sure you want to delete your profile image?')) {
+      storageUtils.deleteProfileImage();
+      setProfileImage(null);
+      setProfileSettings({ zoom: 1, positionX: 0, positionY: 0 });
+      showNotification('Profile image deleted');
+    }
+  };
+
   const handleResumeUpload = (e) => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 10 * 1024 * 1024) {
         showNotification('Resume must be less than 10MB');
+        return;
+      }
+      if (!['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'].includes(file.type)) {
+        showNotification('Only PDF, DOC, and DOCX formats allowed');
         return;
       }
       setResumeFile(file);
@@ -173,434 +246,356 @@ export default function Portfolio() {
         uploadDate: getFormattedDate(),
         fileSize: (file.size / (1024 * 1024)).toFixed(2) + " MB"
       });
-      showNotification('Resume uploaded');
+      showNotification('Resume uploaded successfully');
     }
   };
 
-  // Resume download
-  const handleResumeDownload = () => {
+  const downloadResume = () => {
     if (resumeFile) {
       const url = URL.createObjectURL(resumeFile);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = resumeMetadata.name;
-      link.click();
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = resumeFile.name;
+      a.click();
       URL.revokeObjectURL(url);
-    } else if (resumeConfig_.enabled) {
-      const link = document.createElement('a');
-      link.href = resumeConfig_.resumeUrl;
-      link.download = resumeMetadata.name;
-      link.click();
     }
   };
 
-  // Resume delete
-  const handleDeleteResume = () => {
-    setResumeFile(null);
-    setResumeMetadata({
-      name: "Nitish_Chunduru_SAP_MM_Resume.pdf",
-      uploadDate: getFormattedDate(),
-      fileSize: "2.4 MB"
-    });
-    showNotification('Resume deleted');
-  };
-
-  // Resume view
-  const handleViewResume = () => {
-    if (resumeFile) {
-      const url = URL.createObjectURL(resumeFile);
-      window.open(url, '_blank');
-      URL.revokeObjectURL(url);
-    } else if (resumeConfig_.enabled) {
-      window.open(resumeConfig_.resumeUrl, '_blank');
+  const deleteResume = () => {
+    if (confirm('Are you sure you want to delete the resume?')) {
+      setResumeFile(null);
+      setResumeMetadata({
+        name: "Nitish_Chunduru_SAP_MM_Resume.pdf",
+        uploadDate: getFormattedDate(),
+        fileSize: "2.4 MB"
+      });
+      showNotification('Resume deleted');
     }
   };
 
-  // Update personal details
-  const handleUpdateDetails = () => {
-    setDetails(adminFormData);
+  const updatePersonalDetails = (e) => {
+    e.preventDefault();
     storageUtils.setPersonalDetails(adminFormData);
+    setDetails(adminFormData);
     showNotification('Contact information updated');
   };
 
-  // Toggle resume section
-  const handleToggleResumeSection = () => {
-    const newConfig = { ...resumeConfig_, enabled: !resumeConfig_.enabled };
-    setResumeConfig_(newConfig);
-    storageUtils.setResumeConfig(newConfig);
-    showNotification(`Resume section ${newConfig.enabled ? 'enabled' : 'disabled'}`);
+  const toggleAdminMode = () => {
+    const newAdminState = !isAdmin;
+    storageUtils.setIsAdmin(newAdminState);
+    setIsAdmin(newAdminState);
+    showNotification(newAdminState ? 'Admin mode enabled' : 'Admin mode disabled');
   };
 
-  const isDark = theme === 'dark';
+  // Core Competencies with Icons
+  const competencies = [
+    { category: "SAP Modules", skills: ["SAP MM", "SAP S4HANA", "SAP Fiori", "SAP ERP"] },
+    { category: "P2P Process", skills: ["Procure to Pay", "Purchase Requisition", "Purchase Order", "Goods Receipt", "Goods Issue"] },
+    { category: "Inventory", skills: ["Inventory Management", "Stock Transfers", "Data Validation"] },
+    { category: "Testing & Support", skills: ["User Acceptance Testing", "Functional Testing", "End User Support", "Troubleshooting"] },
+    { category: "Integration", skills: ["SAP FI Integration", "SAP SD Integration", "SAP PP Integration"] },
+    { category: "Database", skills: ["Oracle SQL", "PLSQL", "Data Reconciliation"] },
+    { category: "Documentation", skills: ["Business Documentation", "Reporting", "Analytics"] }
+  ];
+
+  const projects = [
+    {
+      name: "Cohance Migration Support SAP MM S4HANA",
+      role: "SAP MM Trainee Consultant",
+      company: "Proven Tech",
+      period: "Aug 2025 - Present",
+      achievements: [
+        "Migration Support for SAP MM module",
+        "PR, PO, GR, GI Activities",
+        "Data Validation and Reconciliation",
+        "Testing and Issue Resolution",
+        "Post Migration Support"
+      ]
+    }
+  ];
+
+  // Default Avatar SVG
+  const DefaultAvatar = () => (
+    <div className="w-full h-full rounded-full bg-gradient-to-br from-slate-300 to-slate-400 dark:from-slate-600 dark:to-slate-700 flex items-center justify-center">
+      <svg className="w-20 h-20 text-slate-500 dark:text-slate-300" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+      </svg>
+    </div>
+  );
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${isDark ? 'bg-slate-950 text-white' : 'bg-gradient-to-b from-slate-50 via-white to-slate-50 text-slate-900'}`}>
-      {/* Admin Settings Button */}
-      <button
-        onClick={() => setShowAdminPanel(!showAdminPanel)}
-        className={`fixed bottom-8 right-8 z-40 p-3 rounded-full shadow-lg transition-all hover:scale-110 ${isDark ? 'bg-amber-500 hover:bg-amber-600' : 'bg-emerald-600 hover:bg-emerald-700'} text-white`}
-        title="Admin Settings"
-      >
-        <Settings className="h-6 w-6" />
-      </button>
-
-      {/* Admin Settings Panel */}
-      {showAdminPanel && (
-        <div className={`fixed inset-0 z-50 overflow-y-auto ${isDark ? 'bg-black/50' : 'bg-black/30'}`}>
-          <div className="flex items-center justify-center min-h-screen p-4">
-            <Card className={`w-full max-w-2xl ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white'}`}>
-              <CardContent className="p-8">
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-3xl font-bold">Admin Settings</h2>
-                  <button onClick={() => setShowAdminPanel(false)} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded">
-                    <X className="h-6 w-6" />
-                  </button>
-                </div>
-
-                <div className="space-y-8">
-                  {/* Theme Toggle */}
-                  <div className="border-t border-slate-200 dark:border-slate-800 pt-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="text-lg font-bold mb-2">Theme</h3>
-                        <p className={isDark ? 'text-slate-400' : 'text-slate-600'}>Current: {theme.charAt(0).toUpperCase() + theme.slice(1)} Mode</p>
-                      </div>
-                      <button
-                        onClick={toggleTheme}
-                        className={`p-3 rounded-lg transition-all ${isDark ? 'bg-slate-800 hover:bg-slate-700' : 'bg-slate-100 hover:bg-slate-200'}`}
-                      >
-                        {isDark ? <Sun className="h-6 w-6 text-amber-400" /> : <Moon className="h-6 w-6 text-slate-600" />}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Profile Image Management */}
-                  <div className="border-t border-slate-200 dark:border-slate-800 pt-6">
-                    <h3 className="text-lg font-bold mb-4">Profile Image</h3>
-                    <div className="space-y-4">
-                      <div>
-                        <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                          Upload New Image
-                        </label>
-                        <div className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-all ${isDark ? 'border-slate-700 hover:border-amber-500 hover:bg-slate-800' : 'border-slate-300 hover:border-emerald-400 hover:bg-emerald-50'}`}>
-                          <input
-                            type="file"
-                            accept=".jpg,.jpeg,.png,.webp"
-                            onChange={handleProfileImageUpload}
-                            className="hidden"
-                            id="profile-upload"
-                          />
-                          <label htmlFor="profile-upload" className="cursor-pointer block">
-                            <Upload className={`h-6 w-6 mx-auto mb-2 ${isDark ? 'text-slate-400' : 'text-slate-400'}`} />
-                            <p className="text-sm font-medium">Click to upload (Max 5MB)</p>
-                            <p className={`text-xs mt-1 ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>JPG, PNG, WebP</p>
-                          </label>
-                        </div>
-                      </div>
-                      {profileImage && (
-                        <button
-                          onClick={handleDeleteProfileImage}
-                          className="w-full bg-red-100 hover:bg-red-200 dark:bg-red-900 dark:hover:bg-red-800 text-red-700 dark:text-red-300 font-semibold py-2 px-4 rounded-lg transition-all flex items-center justify-center gap-2"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                          Delete Current Image
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Contact Information */}
-                  <div className="border-t border-slate-200 dark:border-slate-800 pt-6">
-                    <h3 className="text-lg font-bold mb-4">Contact Information</h3>
-                    <div className="space-y-4">
-                      <div>
-                        <label className={`block text-sm font-medium mb-1 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Name</label>
-                        <input
-                          type="text"
-                          value={adminFormData.name}
-                          onChange={(e) => setAdminFormData({...adminFormData, name: e.target.value})}
-                          className={`w-full px-4 py-2 rounded-lg border ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-300 text-slate-900'}`}
-                        />
-                      </div>
-                      <div>
-                        <label className={`block text-sm font-medium mb-1 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Headline</label>
-                        <input
-                          type="text"
-                          value={adminFormData.headline}
-                          onChange={(e) => setAdminFormData({...adminFormData, headline: e.target.value})}
-                          className={`w-full px-4 py-2 rounded-lg border ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-300 text-slate-900'}`}
-                        />
-                      </div>
-                      <div>
-                        <label className={`block text-sm font-medium mb-1 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Email</label>
-                        <input
-                          type="email"
-                          value={adminFormData.email}
-                          onChange={(e) => setAdminFormData({...adminFormData, email: e.target.value})}
-                          className={`w-full px-4 py-2 rounded-lg border ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-300 text-slate-900'}`}
-                        />
-                      </div>
-                      <div>
-                        <label className={`block text-sm font-medium mb-1 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Phone</label>
-                        <input
-                          type="tel"
-                          value={adminFormData.phone}
-                          onChange={(e) => setAdminFormData({...adminFormData, phone: e.target.value})}
-                          className={`w-full px-4 py-2 rounded-lg border ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-300 text-slate-900'}`}
-                        />
-                      </div>
-                      <div>
-                        <label className={`block text-sm font-medium mb-1 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>LinkedIn URL</label>
-                        <input
-                          type="url"
-                          value={adminFormData.linkedin}
-                          onChange={(e) => setAdminFormData({...adminFormData, linkedin: e.target.value})}
-                          className={`w-full px-4 py-2 rounded-lg border ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-300 text-slate-900'}`}
-                        />
-                      </div>
-                      <div>
-                        <label className={`block text-sm font-medium mb-1 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>GitHub URL</label>
-                        <input
-                          type="url"
-                          value={adminFormData.github}
-                          onChange={(e) => setAdminFormData({...adminFormData, github: e.target.value})}
-                          className={`w-full px-4 py-2 rounded-lg border ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-300 text-slate-900'}`}
-                        />
-                      </div>
-                      <button
-                        onClick={handleUpdateDetails}
-                        className={`w-full font-semibold py-2 px-4 rounded-lg transition-all flex items-center justify-center gap-2 ${isDark ? 'bg-amber-600 hover:bg-amber-700 text-white' : 'bg-emerald-600 hover:bg-emerald-700 text-white'}`}
-                      >
-                        <Check className="h-4 w-4" />
-                        Save Contact Information
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Resume Management */}
-                  <div className="border-t border-slate-200 dark:border-slate-800 pt-6">
-                    <h3 className="text-lg font-bold mb-4">Resume Management</h3>
-                    <div className="space-y-4">
-                      <div>
-                        <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                          Upload Resume
-                        </label>
-                        <div className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-all ${isDark ? 'border-slate-700 hover:border-amber-500 hover:bg-slate-800' : 'border-slate-300 hover:border-emerald-400 hover:bg-emerald-50'}`}>
-                          <input
-                            type="file"
-                            accept=".pdf,.doc,.docx"
-                            onChange={handleResumeUpload}
-                            className="hidden"
-                            id="admin-resume-upload"
-                          />
-                          <label htmlFor="admin-resume-upload" className="cursor-pointer block">
-                            <Upload className={`h-6 w-6 mx-auto mb-2 ${isDark ? 'text-slate-400' : 'text-slate-400'}`} />
-                            <p className="text-sm font-medium">Click to upload (Max 10MB)</p>
-                            <p className={`text-xs mt-1 ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>PDF, DOC, DOCX</p>
-                          </label>
-                        </div>
-                      </div>
-                      <div className={`p-4 rounded-lg ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>
-                        <p className={`text-sm mb-2 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Current Resume: {resumeMetadata.name}</p>
-                        <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>Uploaded: {resumeMetadata.uploadDate}</p>
-                      </div>
-                      <div className="space-y-2">
-                        <button
-                          onClick={handleResumeDownload}
-                          className={`w-full font-semibold py-2 px-4 rounded-lg transition-all flex items-center justify-center gap-2 ${isDark ? 'bg-blue-900 hover:bg-blue-800 text-blue-300' : 'bg-blue-100 hover:bg-blue-200 text-blue-700'}`}
-                        >
-                          <Download className="h-4 w-4" />
-                          Download Resume
-                        </button>
-                        {resumeFile && (
-                          <button
-                            onClick={handleDeleteResume}
-                            className={`w-full font-semibold py-2 px-4 rounded-lg transition-all flex items-center justify-center gap-2 ${isDark ? 'bg-red-900 hover:bg-red-800 text-red-300' : 'bg-red-100 hover:bg-red-200 text-red-700'}`}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                            Delete Uploaded Resume
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Resume Section Toggle */}
-                  <div className="border-t border-slate-200 dark:border-slate-800 pt-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="text-lg font-bold mb-2">Resume Section</h3>
-                        <p className={isDark ? 'text-slate-400' : 'text-slate-600'}>Status: {resumeConfig_.enabled ? 'Visible' : 'Hidden'}</p>
-                      </div>
-                      <button
-                        onClick={handleToggleResumeSection}
-                        className={`px-4 py-2 rounded-lg font-semibold transition-all ${resumeConfig_.enabled ? (isDark ? 'bg-green-900 text-green-300 hover:bg-green-800' : 'bg-green-100 text-green-700 hover:bg-green-200') : (isDark ? 'bg-red-900 text-red-300 hover:bg-red-800' : 'bg-red-100 text-red-700 hover:bg-red-200')}`}
-                      >
-                        {resumeConfig_.enabled ? 'Hide' : 'Show'}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => setShowAdminPanel(false)}
-                  className={`w-full mt-8 font-semibold py-2 px-4 rounded-lg transition-all ${isDark ? 'bg-slate-800 hover:bg-slate-700 text-white' : 'bg-slate-200 hover:bg-slate-300 text-slate-900'}`}
-                >
-                  Close Admin Panel
-                </button>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      )}
-
+    <div className={`min-h-screen transition-colors duration-300 ${theme === 'dark' ? 'dark bg-slate-900' : 'bg-slate-50'}`}>
       {/* Notification */}
       {notification && (
-        <div className={`fixed top-4 right-4 z-40 px-6 py-3 rounded-lg font-semibold transition-all ${isDark ? 'bg-amber-500 text-white' : 'bg-emerald-500 text-white'} shadow-lg`}>
+        <div className="fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-pulse">
           {notification}
         </div>
       )}
 
-      {/* Navigation Bar */}
-      <nav className={`fixed top-0 w-full z-40 shadow-sm transition-colors duration-300 ${isDark ? 'bg-slate-900/80 border-b border-slate-800' : 'bg-white/80 border-b border-slate-200'} backdrop-blur-lg`}>
-        <div className="container px-4 md:px-6 py-4 flex justify-between items-center">
-          <h1 className="text-xl md:text-2xl font-bold tracking-tight">
-            Nitish<span className={isDark ? 'text-amber-500' : 'text-emerald-600'}>.</span>Chunduru
+      {/* Navigation */}
+      <nav className={`sticky top-0 z-40 ${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'} border-b transition-colors duration-300`}>
+        <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+          <h1 className={`text-2xl font-bold ${theme === 'dark' ? 'text-amber-400' : 'text-emerald-600'}`}>
+            {details.name}
           </h1>
-          <div className="hidden md:flex gap-8 items-center">
-            <a href="#about" className={`transition-colors font-medium text-sm ${isDark ? 'text-slate-400 hover:text-amber-400' : 'text-slate-600 hover:text-emerald-600'}`}>About</a>
-            <a href="#experience" className={`transition-colors font-medium text-sm ${isDark ? 'text-slate-400 hover:text-amber-400' : 'text-slate-600 hover:text-emerald-600'}`}>Experience</a>
-            <a href="#skills" className={`transition-colors font-medium text-sm ${isDark ? 'text-slate-400 hover:text-amber-400' : 'text-slate-600 hover:text-emerald-600'}`}>Skills</a>
-            {resumeConfig_.enabled && (
-              <a href="#resume" className={`transition-colors font-medium text-sm ${isDark ? 'text-slate-400 hover:text-amber-400' : 'text-slate-600 hover:text-emerald-600'}`}>Resume</a>
-            )}
-            <a href="#contact" className={`transition-colors font-medium text-sm ${isDark ? 'text-slate-400 hover:text-amber-400' : 'text-slate-600 hover:text-emerald-600'}`}>Contact</a>
+          <div className="flex gap-2 items-center">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={toggleTheme}
+              className={theme === 'dark' ? 'bg-slate-700 border-slate-600' : ''}
+            >
+              {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowAdminPanel(true)}
+              className={theme === 'dark' ? 'bg-slate-700 border-slate-600' : ''}
+            >
+              <Settings className="w-4 h-4" />
+            </Button>
           </div>
         </div>
       </nav>
 
       {/* Hero Section */}
-      <section className="relative pt-32 pb-20 flex items-center justify-center overflow-hidden">
-        <div className="container px-4 md:px-6 relative z-10">
-          <div className="grid gap-12 lg:grid-cols-[1fr_420px] items-center">
-            <div className="flex flex-col justify-center space-y-8">
-              <div className="space-y-4">
-                <Badge className={`inline-block font-semibold px-3 py-1 rounded-full text-xs ${isDark ? 'bg-amber-900 text-amber-200' : 'bg-emerald-100 text-emerald-700'}`}>
-                  SAP MM Consultant
-                </Badge>
-                <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-tight">
-                  {details.name}
-                </h1>
-                <h2 className={`text-2xl md:text-3xl font-semibold ${isDark ? 'text-amber-400' : 'text-emerald-600'}`}>
-                  {details.headline}
-                </h2>
-                <p className={`text-lg font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                  {details.subtitle}
-                </p>
-                <p className={`text-base leading-relaxed max-w-2xl ${isDark ? 'text-slate-400' : 'text-slate-700'}`}>
-                  Enterprise resource planning specialist with 1+ years of hands-on experience in SAP MM migration, procurement processes, and inventory management. Proven expertise in P2P cycle, materials master data, and production support.
-                </p>
-              </div>
-              <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                <Button 
-                  onClick={() => window.location.href = `mailto:${details.email}`}
-                  className={`font-semibold py-3 px-6 rounded-lg transition-all flex items-center gap-2 group ${isDark ? 'bg-amber-600 hover:bg-amber-700 text-white' : 'bg-emerald-600 hover:bg-emerald-700 text-white'}`}
-                >
-                  <Mail className="h-5 w-5" />
-                  Contact Me
-                  <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                </Button>
-                <Button 
-                  asChild 
-                  className={`font-semibold py-3 px-6 rounded-lg transition-all flex items-center gap-2 ${isDark ? 'bg-slate-700 hover:bg-slate-600 text-white' : 'bg-slate-900 hover:bg-slate-800 text-white'}`}
-                >
-                  <a href={details.linkedin} target="_blank" rel="noopener noreferrer">
-                    <Linkedin className="h-5 w-5" />
-                    LinkedIn
-                  </a>
-                </Button>
-                <Button 
-                  asChild 
-                  className={`font-semibold py-3 px-6 rounded-lg transition-all flex items-center gap-2 ${isDark ? 'bg-slate-600 hover:bg-slate-500 text-white' : 'bg-slate-700 hover:bg-slate-600 text-white'}`}
-                >
-                  <a href={details.github} target="_blank" rel="noopener noreferrer">
-                    <Github className="h-5 w-5" />
-                    GitHub
-                  </a>
-                </Button>
-                {resumeConfig_.enabled && (
-                  <Button 
-                    onClick={handleResumeDownload}
-                    className={`font-semibold py-3 px-6 rounded-lg transition-all flex items-center gap-2 group ${isDark ? 'bg-amber-600 hover:bg-amber-700 text-white' : 'bg-amber-500 hover:bg-amber-600 text-white'}`}
-                  >
-                    <Download className="h-5 w-5" />
-                    Resume
-                  </Button>
-                )}
-              </div>
-            </div>
-            <div className="relative group">
-              <div className={`absolute -inset-3 rounded-3xl blur-xl opacity-40 group-hover:opacity-60 transition-all duration-300 ${isDark ? 'bg-gradient-to-br from-amber-200 to-slate-600' : 'bg-gradient-to-br from-emerald-200 to-slate-200'}`}></div>
-              <div className={`relative overflow-hidden rounded-2xl border-4 shadow-xl bg-white ${isDark ? 'border-slate-700 bg-slate-800' : 'border-slate-200'}`}>
-                <img
-                  alt={details.name}
-                  className="w-full aspect-square object-cover"
-                  src={profileImage || '/profile.png'}
-                  onError={(e) => {
-                    e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='420'%3E%3Crect fill='%23e2e8f0' width='420' height='420'/%3E%3Ccircle cx='210' cy='140' r='60' fill='%23cbd5e1'/%3E%3Cellipse cx='210' cy='280' rx='80' ry='100' fill='%23cbd5e1'/%3E%3C/svg%3E"
+      <section className={`py-20 ${theme === 'dark' ? 'bg-slate-800' : 'bg-white'} transition-colors duration-300`}>
+        <div className="max-w-6xl mx-auto px-4 grid md:grid-cols-2 gap-12 items-center">
+          {/* Profile Image */}
+          <div className="flex justify-center">
+            <div className="w-64 h-64 rounded-full overflow-hidden border-4 border-emerald-500 dark:border-amber-400 shadow-2xl">
+              {profileImage ? (
+                <div
+                  className="w-full h-full bg-cover bg-center"
+                  style={{
+                    backgroundImage: `url(${profileImage})`,
+                    backgroundPosition: `${50 + profileSettings.positionX}% ${50 + profileSettings.positionY}%`,
+                    backgroundSize: `${profileSettings.zoom * 100}%`
                   }}
-                  width={420}
-                  height={420}
                 />
-              </div>
+              ) : (
+                <DefaultAvatar />
+              )}
+            </div>
+          </div>
+
+          {/* Hero Content */}
+          <div>
+            <h2 className={`text-5xl font-bold mb-4 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+              {details.name}
+            </h2>
+            <p className={`text-2xl font-semibold mb-2 ${theme === 'dark' ? 'text-amber-400' : 'text-emerald-600'}`}>
+              {details.headline}
+            </p>
+            <p className={`text-lg mb-6 ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>
+              {details.subtitle}
+            </p>
+
+            {/* Action Buttons */}
+            <div className="flex flex-wrap gap-4">
+              <Button
+                onClick={() => window.location.href = `mailto:${details.email}`}
+                className={theme === 'dark' ? 'bg-amber-500 hover:bg-amber-600 text-slate-900' : 'bg-emerald-600 hover:bg-emerald-700 text-white'}
+              >
+                <Mail className="w-4 h-4 mr-2" />
+                Contact Me
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => window.open(details.linkedin, '_blank')}
+                className={theme === 'dark' ? 'border-amber-400 text-amber-400' : 'border-emerald-600 text-emerald-600'}
+              >
+                <Linkedin className="w-4 h-4 mr-2" />
+                LinkedIn
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => window.open(details.github, '_blank')}
+                className={theme === 'dark' ? 'border-amber-400 text-amber-400' : 'border-emerald-600 text-emerald-600'}
+              >
+                <Github className="w-4 h-4 mr-2" />
+                GitHub
+              </Button>
+              {resumeConfig_.enabled && (
+                <Button
+                  variant="outline"
+                  onClick={() => downloadResume()}
+                  className={theme === 'dark' ? 'border-amber-400 text-amber-400' : 'border-emerald-600 text-emerald-600'}
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Resume
+                </Button>
+              )}
             </div>
           </div>
         </div>
-        <div className={`absolute bottom-12 left-1/2 transform -translate-x-1/2 animate-bounce ${isDark ? 'text-amber-500' : 'text-emerald-600'}`}>
-          <ChevronDown className="h-8 w-8" />
+      </section>
+
+      {/* Core Competencies */}
+      <section className={`py-20 ${theme === 'dark' ? 'bg-slate-900' : 'bg-slate-50'} transition-colors duration-300`}>
+        <div className="max-w-6xl mx-auto px-4">
+          <h2 className={`text-3xl font-bold mb-12 text-center ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+            Core Competencies
+          </h2>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {competencies.map((comp, idx) => (
+              <Card key={idx} className={theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-white'}>
+                <CardContent className="p-6">
+                  <h3 className={`font-bold mb-4 ${theme === 'dark' ? 'text-amber-400' : 'text-emerald-600'}`}>
+                    {comp.category}
+                  </h3>
+                  <div className="space-y-2">
+                    {comp.skills.map((skill, sidx) => (
+                      <Badge
+                        key={sidx}
+                        className={`block text-center ${theme === 'dark' ? 'bg-slate-700 text-amber-300' : 'bg-emerald-100 text-emerald-800'}`}
+                      >
+                        {skill}
+                      </Badge>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
       </section>
 
-      {/* Experience Section */}
-      <section id="experience" className={`py-20 md:py-32 transition-colors duration-300 ${isDark ? 'bg-slate-900 border-y border-slate-800' : 'bg-white border-y border-slate-200'}`}>
-        <div className="container px-4 md:px-6">
-          <div className="max-w-4xl mx-auto">
-            <div className="mb-12">
-              <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-3">Professional Experience</h2>
-              <div className={`w-24 h-1 bg-gradient-to-r ${isDark ? 'from-amber-500 to-amber-400' : 'from-emerald-600 to-emerald-400'}`}></div>
-            </div>
-
-            <Card className={`transition-all shadow-sm hover:shadow-md ${isDark ? 'border-slate-700 bg-slate-800 hover:border-amber-600' : 'border-slate-200 bg-white hover:border-emerald-200'}`}>
-              <CardContent className="p-8">
-                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
-                  <div>
-                    <h3 className={`text-2xl md:text-3xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>SAP MM Intern Trainee Consultant</h3>
-                    <p className={`text-lg font-semibold mt-2 ${isDark ? 'text-amber-400' : 'text-emerald-600'}`}>Proven Tech</p>
+      {/* Project Experience */}
+      <section className={`py-20 ${theme === 'dark' ? 'bg-slate-800' : 'bg-white'} transition-colors duration-300`}>
+        <div className="max-w-6xl mx-auto px-4">
+          <h2 className={`text-3xl font-bold mb-12 text-center ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+            Project Experience
+          </h2>
+          <div className="space-y-8">
+            {projects.map((project, idx) => (
+              <Card key={idx} className={theme === 'dark' ? 'bg-slate-700 border-slate-600' : 'bg-slate-50 border-slate-200'}>
+                <CardContent className="p-8">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <h3 className={`text-2xl font-bold ${theme === 'dark' ? 'text-amber-400' : 'text-emerald-600'}`}>
+                        {project.name}
+                      </h3>
+                      <p className={`font-semibold ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                        {project.role}
+                      </p>
+                      <p className={`text-sm ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
+                        {project.company} | {project.period}
+                      </p>
+                    </div>
                   </div>
-                  <Badge className={`${isDark ? 'bg-amber-900 text-amber-200' : 'bg-emerald-100 text-emerald-700'} font-semibold text-sm`}>Aug 2025 - Present</Badge>
+                  <div className={`space-y-2 ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>
+                    {project.achievements.map((achievement, aidx) => (
+                      <div key={aidx} className="flex items-start gap-2">
+                        <Check className={`w-5 h-5 mt-0.5 flex-shrink-0 ${theme === 'dark' ? 'text-amber-400' : 'text-emerald-600'}`} />
+                        <span>{achievement}</span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Resume Section */}
+      {resumeConfig_.enabled && (
+        <section className={`py-20 ${theme === 'dark' ? 'bg-slate-900' : 'bg-slate-50'} transition-colors duration-300`}>
+          <div className="max-w-6xl mx-auto px-4">
+            <h2 className={`text-3xl font-bold mb-12 text-center ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+              Resume
+            </h2>
+            <Card className={theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-white'}>
+              <CardContent className="p-8">
+                <div className="space-y-6">
+                  {/* Resume Metadata */}
+                  <div className={`p-4 rounded-lg ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-100'}`}>
+                    <h3 className={`font-semibold mb-2 ${theme === 'dark' ? 'text-amber-400' : 'text-emerald-600'}`}>
+                      {resumeMetadata.name}
+                    </h3>
+                    <div className={`text-sm space-y-1 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
+                      <p>Upload Date: {resumeMetadata.uploadDate}</p>
+                      <p>File Size: {resumeMetadata.fileSize}</p>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex flex-wrap gap-4">
+                    <Button
+                      onClick={() => downloadResume()}
+                      className={theme === 'dark' ? 'bg-amber-500 hover:bg-amber-600 text-slate-900' : 'bg-emerald-600 hover:bg-emerald-700 text-white'}
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Download Resume
+                    </Button>
+                    {isAdmin && (
+                      <>
+                        <Button
+                          variant="outline"
+                          onClick={() => document.getElementById('resumeUpload')?.click()}
+                          className={theme === 'dark' ? 'border-amber-400 text-amber-400' : 'border-emerald-600 text-emerald-600'}
+                        >
+                          <Upload className="w-4 h-4 mr-2" />
+                          Replace Resume
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => deleteResume()}
+                          className="border-red-500 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Delete Resume
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                  <input
+                    id="resumeUpload"
+                    type="file"
+                    accept=".pdf,.doc,.docx"
+                    onChange={handleResumeUpload}
+                    className="hidden"
+                  />
                 </div>
-                <p className={`font-semibold mb-6 ${isDark ? 'text-amber-400' : 'text-emerald-600'}`}>1 Year of Hands-on Experience in S4HANA Migration</p>
-                
-                <div className={`border-t pt-6 ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
-                  <h4 className={`font-bold mb-4 text-lg ${isDark ? 'text-white' : 'text-slate-900'}`}>Key Responsibilities & Achievements</h4>
-                  <ul className={`space-y-3 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                    <li className="flex gap-3">
-                      <span className={`font-bold flex-shrink-0 ${isDark ? 'text-amber-400' : 'text-emerald-600'}`}>▸</span>
-                      <span>Supported SAP S4HANA migration and MM support in production environments</span>
-                    </li>
-                    <li className="flex gap-3">
-                      <span className={`font-bold flex-shrink-0 ${isDark ? 'text-amber-400' : 'text-emerald-600'}`}>▸</span>
-                      <span>Managed PR, PO, GR, GI, and inventory processes with full lifecycle understanding</span>
-                    </li>
-                    <li className="flex gap-3">
-                      <span className={`font-bold flex-shrink-0 ${isDark ? 'text-amber-400' : 'text-emerald-600'}`}>▸</span>
-                      <span>Executed MM master data validation and issue resolution during migration</span>
-                    </li>
-                    <li className="flex gap-3">
-                      <span className={`font-bold flex-shrink-0 ${isDark ? 'text-amber-400' : 'text-emerald-600'}`}>▸</span>
-                      <span>Ensured smooth post-migration support and system stability</span>
-                    </li>
-                  </ul>
+              </CardContent>
+            </Card>
+          </div>
+        </section>
+      )}
+
+      {/* Contact Section */}
+      <section className={`py-20 ${theme === 'dark' ? 'bg-slate-800' : 'bg-white'} transition-colors duration-300`}>
+        <div className="max-w-6xl mx-auto px-4">
+          <h2 className={`text-3xl font-bold mb-12 text-center ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+            Get In Touch
+          </h2>
+          <div className="grid md:grid-cols-2 gap-8">
+            <Card className={theme === 'dark' ? 'bg-slate-700 border-slate-600' : 'bg-slate-50'}>
+              <CardContent className="p-8">
+                <div className="flex items-center gap-4 mb-6">
+                  <Mail className={`w-6 h-6 ${theme === 'dark' ? 'text-amber-400' : 'text-emerald-600'}`} />
+                  <div>
+                    <p className={`text-sm ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>Email</p>
+                    <a href={`mailto:${details.email}`} className={`font-semibold ${theme === 'dark' ? 'text-white hover:text-amber-400' : 'text-slate-900 hover:text-emerald-600'}`}>
+                      {details.email}
+                    </a>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className={theme === 'dark' ? 'bg-slate-700 border-slate-600' : 'bg-slate-50'}>
+              <CardContent className="p-8">
+                <div className="flex items-center gap-4">
+                  <Phone className={`w-6 h-6 ${theme === 'dark' ? 'text-amber-400' : 'text-emerald-600'}`} />
+                  <div>
+                    <p className={`text-sm ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>Phone</p>
+                    <a href={`tel:${details.phone}`} className={`font-semibold ${theme === 'dark' ? 'text-white hover:text-amber-400' : 'text-slate-900 hover:text-emerald-600'}`}>
+                      {details.phone}
+                    </a>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -608,218 +603,299 @@ export default function Portfolio() {
         </div>
       </section>
 
-      {/* Skills Section */}
-      <section id="skills" className={`py-20 md:py-32 transition-colors duration-300 ${isDark ? 'bg-gradient-to-b from-slate-800 to-slate-900' : 'bg-gradient-to-b from-slate-50 to-white'}`}>
-        <div className="container px-4 md:px-6">
-          <div className="max-w-6xl mx-auto">
-            <div className="mb-12">
-              <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-3">Core Competencies</h2>
-              <div className={`w-24 h-1 bg-gradient-to-r ${isDark ? 'from-amber-500 to-amber-400' : 'from-emerald-600 to-emerald-400'}`}></div>
-            </div>
-
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[
-                { title: "SAP Systems", skills: ["SAP MM", "SAP S4HANA", "SAP Fiori", "SAP ERP"] },
-                { title: "Materials Management", skills: ["Procurement", "P2P Cycle", "Purchase Orders", "Goods Receipt"] },
-                { title: "Process Expertise", skills: ["Inventory Management", "Material Master", "Goods Issue", "Vendor Management"] },
-                { title: "System Integration", skills: ["SAP SD Integration", "SAP FI Integration"] },
-                { title: "Implementation", skills: ["S4HANA Migration", "Testing", "Data Validation"] },
-                { title: "Business Skills", skills: ["Problem Solving", "Process Optimization", "Documentation", "Team Collaboration"] },
-              ].map((category, idx) => (
-                <Card 
-                  key={idx}
-                  className={`transition-all bg-white group cursor-pointer hover:shadow-md ${isDark ? 'border-slate-700 bg-slate-800 hover:border-amber-600' : 'border-slate-200 hover:border-emerald-200'}`}
-                >
-                  <CardContent className="p-6">
-                    <h3 className={`font-bold text-lg mb-4 transition-colors group-hover:text-amber-500 ${isDark ? 'text-white' : 'text-slate-900 group-hover:text-emerald-600'}`}>
-                      {category.title}
-                    </h3>
-                    <div className="space-y-2">
-                      {category.skills.map((skill, sidx) => (
-                        <div key={sidx} className={`flex items-center gap-2 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                          <span className={`w-2 h-2 rounded-full ${isDark ? 'bg-amber-500' : 'bg-emerald-600'}`}></span>
-                          <span className="text-sm font-medium">{skill}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Resume Management Section */}
-      {resumeConfig_.enabled && (
-        <section id="resume" className={`py-20 md:py-32 transition-colors duration-300 ${isDark ? 'bg-slate-900 border-y border-slate-800' : 'bg-white border-y border-slate-200'}`}>
-          <div className="container px-4 md:px-6">
-            <div className="max-w-4xl mx-auto">
-              <div className="mb-12">
-                <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-3">Resume Management</h2>
-                <div className={`w-24 h-1 bg-gradient-to-r ${isDark ? 'from-amber-500 to-amber-400' : 'from-emerald-600 to-emerald-400'}`}></div>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-8">
-                {/* Upload Section */}
-                <Card className={`shadow-sm ${isDark ? 'border-slate-700 bg-slate-800' : 'border-slate-200'}`}>
-                  <CardContent className="p-8">
-                    <h3 className={`text-xl font-bold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>Upload Resume</h3>
-                    <div className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-all ${isDark ? 'border-slate-600 hover:border-amber-500 hover:bg-slate-700' : 'border-slate-300 hover:border-emerald-400 hover:bg-emerald-50'}`}>
-                      <input
-                        type="file"
-                        accept=".pdf,.doc,.docx"
-                        onChange={handleResumeUpload}
-                        className="hidden"
-                        id="resume-upload"
-                      />
-                      <label htmlFor="resume-upload" className="cursor-pointer">
-                        <FileText className={`h-12 w-12 mx-auto mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
-                        <p className={`font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Click to upload your resume</p>
-                        <p className={`text-sm mt-1 ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>PDF, DOC, or DOCX</p>
-                      </label>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Resume Preview & Actions */}
-                <Card className={`shadow-sm ${isDark ? 'border-slate-700 bg-slate-800' : 'border-slate-200'}`}>
-                  <CardContent className="p-8">
-                    <h3 className={`text-xl font-bold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>Current Resume</h3>
-                    <div className="space-y-4">
-                      <div className={`rounded-lg p-4 ${isDark ? 'bg-slate-700' : 'bg-slate-50'}`}>
-                        <p className={`text-sm mb-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>File Name</p>
-                        <p className={`font-semibold truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>{resumeMetadata.name}</p>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className={`rounded-lg p-4 ${isDark ? 'bg-slate-700' : 'bg-slate-50'}`}>
-                          <p className={`text-sm mb-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Upload Date</p>
-                          <p className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>{resumeMetadata.uploadDate}</p>
-                        </div>
-                        <div className={`rounded-lg p-4 ${isDark ? 'bg-slate-700' : 'bg-slate-50'}`}>
-                          <p className={`text-sm mb-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>File Size</p>
-                          <p className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>{resumeMetadata.fileSize}</p>
-                        </div>
-                      </div>
-                      <div className={`border-t pt-4 ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
-                        <p className={`text-sm mb-3 font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Resume Actions</p>
-                        <div className="space-y-2">
-                          <Button
-                            onClick={handleViewResume}
-                            className={`w-full font-semibold flex items-center justify-center gap-2 ${isDark ? 'bg-amber-900 hover:bg-amber-800 text-amber-200' : 'bg-emerald-100 hover:bg-emerald-200 text-emerald-700'}`}
-                          >
-                            <Eye className="h-4 w-4" />
-                            View Resume
-                          </Button>
-                          <Button
-                            onClick={handleResumeDownload}
-                            className={`w-full font-semibold flex items-center justify-center gap-2 ${isDark ? 'bg-blue-900 hover:bg-blue-800 text-blue-200' : 'bg-blue-100 hover:bg-blue-200 text-blue-700'}`}
-                          >
-                            <Download className="h-4 w-4" />
-                            Download Resume
-                          </Button>
-                          <Button
-                            onClick={handleDeleteResume}
-                            className={`w-full font-semibold flex items-center justify-center gap-2 ${isDark ? 'bg-red-900 hover:bg-red-800 text-red-200' : 'bg-red-100 hover:bg-red-200 text-red-700'}`}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                            Delete Resume
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Contact Section */}
-      <section id="contact" className={`py-20 md:py-32 transition-colors duration-300 ${isDark ? 'bg-gradient-to-b from-slate-800 to-slate-900' : 'bg-gradient-to-b from-slate-50 to-white'}`}>
-        <div className="container px-4 md:px-6">
-          <div className="max-w-4xl mx-auto text-center mb-12">
-            <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-3">Get In Touch</h2>
-            <div className={`w-24 h-1 bg-gradient-to-r mx-auto ${isDark ? 'from-amber-500 to-amber-400' : 'from-emerald-600 to-emerald-400'}`}></div>
-            <p className={`text-lg mt-6 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Let&apos;s connect and discuss your SAP consulting needs</p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-6 max-w-3xl mx-auto mb-12">
-            {[
-              { icon: Mail, title: "Email", value: details.email, link: `mailto:${details.email}` },
-              { icon: Phone, title: "Phone", value: details.phone, link: `tel:${details.phone.replace(/\s/g, '')}` },
-              { icon: Linkedin, title: "LinkedIn", value: "Connect with me", link: details.linkedin }
-            ].map((contact, idx) => {
-              const Icon = contact.icon;
-              return (
-                <a 
-                  key={idx}
-                  href={contact.link}
-                  target={contact.title === "LinkedIn" ? "_blank" : undefined}
-                  rel={contact.title === "LinkedIn" ? "noopener noreferrer" : undefined}
-                  className="group"
-                >
-                  <Card className={`transition-all bg-white h-full hover:shadow-md ${isDark ? 'border-slate-700 bg-slate-800 hover:border-amber-600' : 'border-slate-200 hover:border-emerald-200'}`}>
-                    <CardContent className="p-6 text-center">
-                      <Icon className={`h-10 w-10 mx-auto mb-3 transition-colors group-hover:text-amber-500 ${isDark ? 'text-amber-400' : 'text-emerald-600 group-hover:text-emerald-700'}`} />
-                      <h3 className={`font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>{contact.title}</h3>
-                      <p className={`break-all text-sm ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{contact.value}</p>
-                    </CardContent>
-                  </Card>
-                </a>
-              );
-            })}
-          </div>
-
-          <div className="text-center">
-            <Button 
-              onClick={() => window.location.href = `mailto:${details.email}`}
-              className={`font-semibold py-3 px-8 rounded-lg transition-all inline-flex items-center gap-2 group ${isDark ? 'bg-amber-600 hover:bg-amber-700 text-white' : 'bg-emerald-600 hover:bg-emerald-700 text-white'}`}
-            >
-              Start A Conversation
-              <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-            </Button>
-          </div>
-        </div>
-      </section>
-
       {/* Footer */}
-      <footer className={`py-8 border-t transition-colors duration-300 ${isDark ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-900 border-slate-800 text-white'}`}>
-        <div className="container px-4 md:px-6">
-          <div className="grid md:grid-cols-3 gap-8 mb-8 pb-8 border-b border-slate-800">
-            <div>
-              <h4 className="text-xl font-bold mb-2">Nitish Chunduru</h4>
-              <p className="text-slate-400">SAP MM Consultant & Enterprise Specialist</p>
-            </div>
-            <div>
-              <h5 className="font-bold text-white mb-3">Quick Links</h5>
-              <div className="space-y-2 text-slate-400 text-sm">
-                <a href="#experience" className={`hover:transition block ${isDark ? 'hover:text-amber-400' : 'hover:text-emerald-400'}`}>Experience</a>
-                <a href="#skills" className={`hover:transition block ${isDark ? 'hover:text-amber-400' : 'hover:text-emerald-400'}`}>Skills</a>
-                {resumeConfig_.enabled && (
-                  <a href="#resume" className={`hover:transition block ${isDark ? 'hover:text-amber-400' : 'hover:text-emerald-400'}`}>Resume</a>
-                )}
-                <a href="#contact" className={`hover:transition block ${isDark ? 'hover:text-amber-400' : 'hover:text-emerald-400'}`}>Contact</a>
-              </div>
-            </div>
-            <div>
-              <h5 className="font-bold text-white mb-3">Follow</h5>
-              <div className="space-y-2">
-                <a href={details.linkedin} target="_blank" rel="noopener noreferrer" className={`text-slate-400 transition block text-sm ${isDark ? 'hover:text-amber-400' : 'hover:text-emerald-400'}`}>
-                  LinkedIn
-                </a>
-                <a href={details.github} target="_blank" rel="noopener noreferrer" className={`text-slate-400 transition block text-sm ${isDark ? 'hover:text-amber-400' : 'hover:text-emerald-400'}`}>
-                  GitHub
-                </a>
-              </div>
-            </div>
-          </div>
-          <div className="text-center text-slate-400 text-sm">
-            <p>&copy; 2026 {details.name}. All rights reserved.</p>
-          </div>
+      <footer className={`${theme === 'dark' ? 'bg-slate-900 border-slate-800' : 'bg-slate-900 text-white'} border-t transition-colors duration-300 py-8`}>
+        <div className="max-w-6xl mx-auto px-4 text-center">
+          <p className="text-slate-400">
+            © 2026 {details.name}. All rights reserved.
+          </p>
         </div>
       </footer>
+
+      {/* Admin Panel Modal */}
+      {showAdminPanel && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <Card className={`w-full max-w-2xl max-h-[90vh] overflow-y-auto ${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-white'}`}>
+            <CardContent className="p-6">
+              {/* Header */}
+              <div className="flex justify-between items-center mb-6">
+                <h3 className={`text-2xl font-bold ${theme === 'dark' ? 'text-amber-400' : 'text-emerald-600'}`}>
+                  Admin Settings
+                </h3>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowAdminPanel(false)}
+                  className={theme === 'dark' ? 'bg-slate-700 border-slate-600' : ''}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+
+              {/* Admin Mode Toggle */}
+              <div className={`p-4 rounded-lg mb-6 ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-100'}`}>
+                <Button
+                  onClick={toggleAdminMode}
+                  className={isAdmin ? (theme === 'dark' ? 'bg-amber-500 hover:bg-amber-600' : 'bg-emerald-600 hover:bg-emerald-700') : 'bg-gray-400'}
+                >
+                  {isAdmin ? 'Admin Mode: ON' : 'Admin Mode: OFF'}
+                </Button>
+              </div>
+
+              {/* Profile Image Management */}
+              <div className={`p-4 rounded-lg mb-6 ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-100'}`}>
+                <h4 className={`font-bold mb-4 ${theme === 'dark' ? 'text-amber-400' : 'text-emerald-600'}`}>
+                  Profile Image Management
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    size="sm"
+                    onClick={() => document.getElementById('profileImageUpload')?.click()}
+                    className={theme === 'dark' ? 'bg-amber-500 hover:bg-amber-600 text-slate-900' : 'bg-emerald-600 hover:bg-emerald-700 text-white'}
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    Upload Image
+                  </Button>
+                  {profileImage && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => deleteProfileImage()}
+                      className="border-red-500 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Delete Image
+                    </Button>
+                  )}
+                </div>
+                <input
+                  id="profileImageUpload"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={handleProfileImageUpload}
+                  className="hidden"
+                />
+              </div>
+
+              {/* Image Editor Modal */}
+              {showImageEditor && tempImageData && (
+                <div className={`p-4 rounded-lg mb-6 border-2 ${theme === 'dark' ? 'border-amber-400 bg-slate-700' : 'border-emerald-600 bg-slate-100'}`}>
+                  <h5 className={`font-bold mb-4 ${theme === 'dark' ? 'text-amber-400' : 'text-emerald-600'}`}>
+                    Position Your Image
+                  </h5>
+
+                  {/* Preview */}
+                  <div className="w-32 h-32 rounded-full overflow-hidden mx-auto mb-4 border-2 border-emerald-500 dark:border-amber-400">
+                    <div
+                      className="w-full h-full bg-cover bg-center"
+                      style={{
+                        backgroundImage: `url(${tempImageData})`,
+                        backgroundPosition: `${50 + tempImageSettings.positionX}% ${50 + tempImageSettings.positionY}%`,
+                        backgroundSize: `${tempImageSettings.zoom * 100}%`
+                      }}
+                    />
+                  </div>
+
+                  {/* Zoom Control */}
+                  <div className="space-y-2 mb-4">
+                    <label className={`block text-sm font-semibold ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                      Zoom: {(tempImageSettings.zoom * 100).toFixed(0)}%
+                    </label>
+                    <input
+                      type="range"
+                      min="0.5"
+                      max="2"
+                      step="0.1"
+                      value={tempImageSettings.zoom}
+                      onChange={(e) => setTempImageSettings({ ...tempImageSettings, zoom: parseFloat(e.target.value) })}
+                      className="w-full"
+                    />
+                  </div>
+
+                  {/* Vertical Position */}
+                  <div className="space-y-2 mb-4">
+                    <label className={`block text-sm font-semibold ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                      Vertical: {tempImageSettings.positionY}%
+                    </label>
+                    <input
+                      type="range"
+                      min="-50"
+                      max="50"
+                      step="5"
+                      value={tempImageSettings.positionY}
+                      onChange={(e) => setTempImageSettings({ ...tempImageSettings, positionY: parseInt(e.target.value) })}
+                      className="w-full"
+                    />
+                  </div>
+
+                  {/* Horizontal Position */}
+                  <div className="space-y-2 mb-4">
+                    <label className={`block text-sm font-semibold ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                      Horizontal: {tempImageSettings.positionX}%
+                    </label>
+                    <input
+                      type="range"
+                      min="-50"
+                      max="50"
+                      step="5"
+                      value={tempImageSettings.positionX}
+                      onChange={(e) => setTempImageSettings({ ...tempImageSettings, positionX: parseInt(e.target.value) })}
+                      className="w-full"
+                    />
+                  </div>
+
+                  {/* Buttons */}
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={resetImagePosition}
+                      className={theme === 'dark' ? 'border-slate-600' : ''}
+                    >
+                      Reset Position
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={saveProfileImage}
+                      className={theme === 'dark' ? 'bg-amber-500 hover:bg-amber-600 text-slate-900' : 'bg-emerald-600 hover:bg-emerald-700 text-white'}
+                    >
+                      Save Image
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setShowImageEditor(false);
+                        setTempImageData(null);
+                      }}
+                      className={theme === 'dark' ? 'border-slate-600' : ''}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Contact Information */}
+              <div className={`p-4 rounded-lg mb-6 ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-100'}`}>
+                <h4 className={`font-bold mb-4 ${theme === 'dark' ? 'text-amber-400' : 'text-emerald-600'}`}>
+                  Contact Information
+                </h4>
+                <form onSubmit={updatePersonalDetails} className="space-y-4">
+                  <div>
+                    <label className={`block text-sm font-semibold mb-1 ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                      Name
+                    </label>
+                    <input
+                      type="text"
+                      value={adminFormData.name}
+                      onChange={(e) => setAdminFormData({ ...adminFormData, name: e.target.value })}
+                      className={`w-full px-3 py-2 rounded-lg border ${theme === 'dark' ? 'bg-slate-600 border-slate-500 text-white' : 'bg-white border-slate-300 text-slate-900'}`}
+                    />
+                  </div>
+                  <div>
+                    <label className={`block text-sm font-semibold mb-1 ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                      Email
+                    </label>
+                    <input
+                      type="email"
+                      value={adminFormData.email}
+                      onChange={(e) => setAdminFormData({ ...adminFormData, email: e.target.value })}
+                      className={`w-full px-3 py-2 rounded-lg border ${theme === 'dark' ? 'bg-slate-600 border-slate-500 text-white' : 'bg-white border-slate-300 text-slate-900'}`}
+                    />
+                  </div>
+                  <div>
+                    <label className={`block text-sm font-semibold mb-1 ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                      Phone
+                    </label>
+                    <input
+                      type="tel"
+                      value={adminFormData.phone}
+                      onChange={(e) => setAdminFormData({ ...adminFormData, phone: e.target.value })}
+                      className={`w-full px-3 py-2 rounded-lg border ${theme === 'dark' ? 'bg-slate-600 border-slate-500 text-white' : 'bg-white border-slate-300 text-slate-900'}`}
+                    />
+                  </div>
+                  <div>
+                    <label className={`block text-sm font-semibold mb-1 ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                      LinkedIn URL
+                    </label>
+                    <input
+                      type="url"
+                      value={adminFormData.linkedin}
+                      onChange={(e) => setAdminFormData({ ...adminFormData, linkedin: e.target.value })}
+                      className={`w-full px-3 py-2 rounded-lg border ${theme === 'dark' ? 'bg-slate-600 border-slate-500 text-white' : 'bg-white border-slate-300 text-slate-900'}`}
+                    />
+                  </div>
+                  <div>
+                    <label className={`block text-sm font-semibold mb-1 ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                      GitHub URL
+                    </label>
+                    <input
+                      type="url"
+                      value={adminFormData.github}
+                      onChange={(e) => setAdminFormData({ ...adminFormData, github: e.target.value })}
+                      className={`w-full px-3 py-2 rounded-lg border ${theme === 'dark' ? 'bg-slate-600 border-slate-500 text-white' : 'bg-white border-slate-300 text-slate-900'}`}
+                    />
+                  </div>
+                  <Button
+                    type="submit"
+                    className={theme === 'dark' ? 'bg-amber-500 hover:bg-amber-600 text-slate-900 w-full' : 'bg-emerald-600 hover:bg-emerald-700 text-white w-full'}
+                  >
+                    Save Contact Information
+                  </Button>
+                </form>
+              </div>
+
+              {/* Resume Management (Admin Only) */}
+              {isAdmin && resumeConfig_.enabled && (
+                <div className={`p-4 rounded-lg mb-6 ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-100'}`}>
+                  <h4 className={`font-bold mb-4 ${theme === 'dark' ? 'text-amber-400' : 'text-emerald-600'}`}>
+                    Resume Management
+                  </h4>
+                  <Button
+                    size="sm"
+                    onClick={() => document.getElementById('resumeUploadAdmin')?.click()}
+                    className={theme === 'dark' ? 'bg-amber-500 hover:bg-amber-600 text-slate-900' : 'bg-emerald-600 hover:bg-emerald-700 text-white'}
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    Upload Resume
+                  </Button>
+                  <input
+                    id="resumeUploadAdmin"
+                    type="file"
+                    accept=".pdf,.doc,.docx"
+                    onChange={handleResumeUpload}
+                    className="hidden"
+                  />
+                </div>
+              )}
+
+              {/* Theme Settings */}
+              <div className={`p-4 rounded-lg mb-6 ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-100'}`}>
+                <h4 className={`font-bold mb-4 ${theme === 'dark' ? 'text-amber-400' : 'text-emerald-600'}`}>
+                  Theme
+                </h4>
+                <Button
+                  onClick={toggleTheme}
+                  className={theme === 'dark' ? 'bg-amber-500 hover:bg-amber-600 text-slate-900' : 'bg-emerald-600 hover:bg-emerald-700 text-white'}
+                >
+                  {theme === 'dark' ? <Sun className="w-4 h-4 mr-2" /> : <Moon className="w-4 h-4 mr-2" />}
+                  Current: {theme === 'dark' ? 'Dark Mode' : 'Light Mode'}
+                </Button>
+              </div>
+
+              {/* Close Button */}
+              <Button
+                variant="outline"
+                onClick={() => setShowAdminPanel(false)}
+                className={`w-full ${theme === 'dark' ? 'bg-slate-700 border-slate-600' : ''}`}
+              >
+                Close Admin Panel
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

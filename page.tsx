@@ -82,13 +82,29 @@ const storageUtils = {
       localStorage.setItem('personalDetails', JSON.stringify(details));
     }
   },
-  getResumeUrl: () => {
-    if (typeof window === 'undefined') return resumeUrl;
-    return localStorage.getItem('resumeUrl') || resumeUrl;
+  getResumeData: () => {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem('resumeData');
   },
-  setResumeUrl: (url) => {
+  setResumeData: (base64Data) => {
     if (typeof window !== 'undefined') {
-      localStorage.setItem('resumeUrl', url);
+      localStorage.setItem('resumeData', base64Data);
+    }
+  },
+  deleteResumeData: () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('resumeData');
+      localStorage.removeItem('resumeMetadata');
+    }
+  },
+  getResumeMetadata: () => {
+    if (typeof window === 'undefined') return null;
+    const stored = localStorage.getItem('resumeMetadata');
+    return stored ? JSON.parse(stored) : null;
+  },
+  setResumeMetadata: (metadata) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('resumeMetadata', JSON.stringify(metadata));
     }
   },
   getIsAdmin: () => {
@@ -112,11 +128,13 @@ export default function Portfolio() {
   const [tempImageData, setTempImageData] = useState(null);
   const [tempImageSettings, setTempImageSettings] = useState({ zoom: 1, positionX: 0, positionY: 0 });
   const [details, setDetails] = useState(personalDetails);
-  const [resumeUrl_, setResumeUrl_] = useState(resumeUrl);
+  const [resumeData, setResumeData] = useState(null);
   const [resumeMetadata, setResumeMetadata] = useState({
     name: "Nitish_Chunduru_SAP_MM_Resume.pdf",
     uploadDate: getFormattedDate(),
-    fileSize: "2.4 MB"
+    fileSize: "2.4 MB",
+    version: 1,
+    exists: false
   });
   const [notification, setNotification] = useState(null);
   const [adminFormData, setAdminFormData] = useState(personalDetails);
@@ -134,8 +152,17 @@ export default function Portfolio() {
     setDetails(savedDetails);
     setAdminFormData(savedDetails);
     
-    const savedResumeUrl = storageUtils.getResumeUrl();
-    setResumeUrl_(savedResumeUrl);
+    // Load resume data
+    const savedResumeData = storageUtils.getResumeData();
+    const savedResumeMetadata = storageUtils.getResumeMetadata();
+    
+    if (savedResumeData && savedResumeMetadata) {
+      setResumeData(savedResumeData);
+      setResumeMetadata({
+        ...savedResumeMetadata,
+        exists: true
+      });
+    }
     
     const isAdminMode = storageUtils.getIsAdmin();
     setIsAdmin(isAdminMode);
@@ -212,32 +239,38 @@ export default function Portfolio() {
 
     const reader = new FileReader();
     reader.onload = (event) => {
-      const resumeData = event.target?.result;
+      const base64String = event.target?.result;
       
-      // Store as blob URL or base64
-      const url = URL.createObjectURL(file);
-      storageUtils.setResumeUrl(url);
-      setResumeUrl_(url);
+      // Store base64 data and metadata
+      storageUtils.setResumeData(base64String);
       
-      setResumeMetadata({
+      const newMetadata = {
         name: file.name,
         uploadDate: getFormattedDate(),
-        fileSize: (file.size / (1024 * 1024)).toFixed(2) + ' MB'
-      });
+        fileSize: (file.size / (1024 * 1024)).toFixed(2) + ' MB',
+        version: (resumeMetadata.version || 0) + 1,
+        exists: true
+      };
+      
+      storageUtils.setResumeMetadata(newMetadata);
+      setResumeData(base64String);
+      setResumeMetadata(newMetadata);
       
       showNotification('Resume uploaded and replaced successfully');
     };
-    reader.readAsArrayBuffer(file);
+    reader.readAsDataURL(file);
   };
 
   // Delete resume
   const deleteResume = () => {
-    storageUtils.setResumeUrl(resumeUrl);
-    setResumeUrl_(resumeUrl);
+    storageUtils.deleteResumeData();
+    setResumeData(null);
     setResumeMetadata({
       name: "Nitish_Chunduru_SAP_MM_Resume.pdf",
       uploadDate: getFormattedDate(),
-      fileSize: "2.4 MB"
+      fileSize: "2.4 MB",
+      version: 0,
+      exists: false
     });
     showNotification('Resume deleted');
   };
@@ -508,31 +541,35 @@ export default function Portfolio() {
                       <p><strong>File:</strong> {resumeMetadata.name}</p>
                       <p><strong>Uploaded:</strong> {resumeMetadata.uploadDate}</p>
                       <p><strong>Size:</strong> {resumeMetadata.fileSize}</p>
+                      <p><strong>Version:</strong> {resumeMetadata.version}</p>
+                      <p><strong>Status:</strong> {resumeMetadata.exists ? 'Active' : 'Default'}</p>
                     </div>
 
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={() => window.open(resumeUrl_, '_blank')}
-                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
-                      >
-                        <Eye className="w-4 h-4 mr-2" />
-                        View Resume
-                      </Button>
-                      <Button
-                        onClick={() => {
-                          const link = document.createElement('a');
-                          link.href = resumeUrl_;
-                          link.download = resumeMetadata.name;
-                          link.click();
-                        }}
-                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
-                      >
-                        <Download className="w-4 h-4 mr-2" />
-                        Download
-                      </Button>
-                    </div>
+                    {resumeMetadata.exists && resumeData && (
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={() => window.open(resumeData, '_blank')}
+                          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                        >
+                          <Eye className="w-4 h-4 mr-2" />
+                          View Resume
+                        </Button>
+                        <Button
+                          onClick={() => {
+                            const link = document.createElement('a');
+                            link.href = resumeData;
+                            link.download = resumeMetadata.name;
+                            link.click();
+                          }}
+                          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                        >
+                          <Download className="w-4 h-4 mr-2" />
+                          Download
+                        </Button>
+                      </div>
+                    )}
 
-                    {resumeUrl_ !== resumeUrl && (
+                    {resumeMetadata.exists && (
                       <Button
                         onClick={deleteResume}
                         variant="destructive"

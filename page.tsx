@@ -603,7 +603,37 @@ export default function Portfolio() {
                 <div className="mb-6">
                   <h3 className="text-lg font-bold text-amber-400 mb-4">Resume Management</h3>
                   <div className="space-y-4">
-                    <div className="border-2 border-dashed border-slate-600 rounded-lg p-6 text-center cursor-pointer hover:border-amber-400">
+                    {/* Current Resume Status */}
+                    <div className="p-4 bg-slate-700 rounded-lg border border-slate-600">
+                      <h4 className="font-bold text-amber-400 mb-3">Current Resume</h4>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <p className="text-slate-400">File Name</p>
+                          <p className="text-white font-medium">{resumeMetadata.name}</p>
+                        </div>
+                        <div>
+                          <p className="text-slate-400">Upload Date</p>
+                          <p className="text-white font-medium">{resumeMetadata.uploadDate}</p>
+                        </div>
+                        <div>
+                          <p className="text-slate-400">File Size</p>
+                          <p className="text-white font-medium">{resumeMetadata.fileSize}</p>
+                        </div>
+                        <div>
+                          <p className="text-slate-400">Version</p>
+                          <p className="text-white font-medium">v{resumeMetadata.version}</p>
+                        </div>
+                        <div className="col-span-2">
+                          <p className="text-slate-400">Status</p>
+                          <p className={`font-medium ${resumeMetadata.exists ? 'text-green-400' : 'text-slate-400'}`}>
+                            {resumeMetadata.exists ? '✓ Active (Custom)' : '○ Default'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Upload/Replace Section */}
+                    <div className="border-2 border-dashed border-slate-600 rounded-lg p-6 text-center cursor-pointer hover:border-amber-400 transition-colors">
                       <input
                         type="file"
                         accept=".pdf,.doc,.docx"
@@ -613,52 +643,39 @@ export default function Portfolio() {
                       />
                       <label htmlFor="resumeUpload" className="cursor-pointer block">
                         <Upload className="w-8 h-8 mx-auto mb-2 text-slate-400" />
-                        <p className="text-slate-300">Upload Resume (PDF, DOC, DOCX - max 10MB)</p>
+                        <p className="text-slate-300 font-medium">{resumeMetadata.exists ? 'Replace Resume' : 'Upload Resume'}</p>
+                        <p className="text-slate-500 text-sm mt-1">PDF, DOC, DOCX - max 10MB</p>
                       </label>
                     </div>
 
-                    <div className="p-3 bg-slate-700 rounded text-sm">
-                      <p>
-                        <strong>File:</strong> {resumeMetadata.name}
-                      </p>
-                      <p>
-                        <strong>Uploaded:</strong> {resumeMetadata.uploadDate}
-                      </p>
-                      <p>
-                        <strong>Size:</strong> {resumeMetadata.fileSize}
-                      </p>
-                      <p>
-                        <strong>Version:</strong> {resumeMetadata.version}
-                      </p>
-                      <p>
-                        <strong>Status:</strong> {resumeMetadata.exists ? 'Active' : 'Default'}
-                      </p>
+                    {/* Action Buttons */}
+                    <div className="grid grid-cols-2 gap-2">
+                      {resumeMetadata.exists && resumeData && (
+                        <>
+                          <Button
+                            onClick={() => window.open(resumeData, '_blank')}
+                            className="bg-blue-600 hover:bg-blue-700 text-white"
+                          >
+                            <Eye className="w-4 h-4 mr-2" />
+                            View Resume
+                          </Button>
+                          <Button
+                            onClick={() => {
+                              const link = document.createElement('a')
+                              link.href = resumeData
+                              link.download = resumeMetadata.name
+                              link.click()
+                            }}
+                            className="bg-blue-600 hover:bg-blue-700 text-white"
+                          >
+                            <Download className="w-4 h-4 mr-2" />
+                            Download
+                          </Button>
+                        </>
+                      )}
                     </div>
 
-                    {resumeMetadata.exists && resumeData && (
-                      <div className="flex gap-2">
-                        <Button
-                          onClick={() => window.open(resumeData, '_blank')}
-                          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
-                        >
-                          <Eye className="w-4 h-4 mr-2" />
-                          View Resume
-                        </Button>
-                        <Button
-                          onClick={() => {
-                            const link = document.createElement('a')
-                            link.href = resumeData
-                            link.download = resumeMetadata.name
-                            link.click()
-                          }}
-                          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
-                        >
-                          <Download className="w-4 h-4 mr-2" />
-                          Download
-                        </Button>
-                      </div>
-                    )}
-
+                    {/* Delete Button */}
                     {resumeMetadata.exists && (
                       <Button
                         onClick={deleteResume}
@@ -669,6 +686,11 @@ export default function Portfolio() {
                         Delete Custom Resume
                       </Button>
                     )}
+
+                    {/* Info Text */}
+                    <p className="text-xs text-slate-500 mt-4">
+                      💡 Tip: Uploading a new resume automatically replaces the current one. All changes are saved to your browser's storage.
+                    </p>
                   </div>
                 </div>
               )}

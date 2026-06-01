@@ -172,26 +172,24 @@ export default function Portfolio() {
     const reader = new FileReader()
     reader.onload = (event) => {
       const imageData = event.target?.result
-      setTempImageData(imageData)
-      setTempImageSettings({ zoom: 1, positionX: 0, positionY: 0 })
-      setShowImageEditor(true)
+      // Upload image with default zoom/position settings
+      storageUtils.setProfileImage(imageData)
+      storageUtils.setProfileSettings({ zoom: 1, positionX: 0, positionY: 0 })
+      setProfileImage(imageData)
+      setProfileSettings({ zoom: 1, positionX: 0, positionY: 0 })
+      showNotification('Image uploaded successfully')
     }
     reader.readAsDataURL(file)
   }
 
   // Save image with settings
   const saveImageWithSettings = () => {
-    if (!tempImageData) return
+    if (!profileImage) return
 
-    storageUtils.setProfileImage(tempImageData)
-    storageUtils.setProfileSettings(tempImageSettings)
+    storageUtils.setProfileImage(profileImage)
+    storageUtils.setProfileSettings(profileSettings)
 
-    setProfileImage(tempImageData)
-    setProfileSettings(tempImageSettings)
-    setShowImageEditor(false)
-    setTempImageData(null)
-
-    showNotification('Profile image updated successfully')
+    showNotification('Image settings saved successfully')
   }
 
   // Delete profile image
@@ -341,7 +339,8 @@ export default function Portfolio() {
               <div className="mb-6">
                 <h3 className="text-lg font-bold text-amber-400 mb-4">Profile Image Management</h3>
                 <div className="space-y-4">
-                  <div className="border-2 border-dashed border-slate-600 rounded-lg p-6 text-center cursor-pointer hover:border-amber-400">
+                  {/* Upload Area */}
+                  <div className="border-2 border-dashed border-slate-600 rounded-lg p-6 text-center cursor-pointer hover:border-amber-400 transition-colors">
                     <input
                       type="file"
                       accept="image/*"
@@ -351,204 +350,203 @@ export default function Portfolio() {
                     />
                     <label htmlFor="imageUpload" className="cursor-pointer block">
                       <Upload className="w-8 h-8 mx-auto mb-2 text-slate-400" />
-                      <p className="text-slate-300">Upload Image (JPG, PNG, WebP - max 5MB)</p>
+                      <p className="text-slate-300 font-medium">{profileImage ? 'Replace Image' : 'Upload Image'}</p>
+                      <p className="text-slate-500 text-sm mt-1">JPG, PNG, WebP - max 5MB</p>
                     </label>
                   </div>
 
+                  {/* Current Image Preview & Controls */}
                   {profileImage && (
-                    <>
-                      <Button
-                        onClick={() => setShowImageEditor(true)}
-                        className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                      >
-                        Edit Image (Zoom, Move Position)
-                      </Button>
-                      <Button onClick={deleteProfileImage} variant="destructive" className="w-full">
-                        <Trash2 className="w-4 h-4 mr-2" />
-                        Delete Image
-                      </Button>
-                    </>
+                    <div className="p-4 bg-slate-700 rounded-lg border border-slate-600">
+                      <h4 className="font-bold text-amber-400 mb-4">Current Image Preview</h4>
+                      
+                      {/* Image Preview */}
+                      <div className="mb-4 flex justify-center">
+                        <div
+                          className="w-40 h-40 rounded-full overflow-hidden border-4 border-amber-400"
+                          style={{
+                            backgroundImage: `url(${tempImageData})`,
+                            backgroundSize: `${profileSettings.zoom * 100}%`,
+                            backgroundPosition: `${50 + profileSettings.positionX * 10}% ${50 + profileSettings.positionY * 10}%`,
+                            backgroundRepeat: 'no-repeat',
+                          }}
+                        />
+                      </div>
+
+                      {/* Zoom Controls */}
+                      <div className="space-y-4">
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <label className="text-slate-300 text-sm font-medium">Zoom</label>
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                onClick={() =>
+                                  setProfileSettings({
+                                    ...profileSettings,
+                                    zoom: Math.max(0.5, profileSettings.zoom - 0.1),
+                                  })
+                                }
+                                className="bg-slate-600 hover:bg-slate-500"
+                              >
+                                <Minus className="w-3 h-3" />
+                              </Button>
+                              <span className="text-slate-300 w-12 text-center text-sm">
+                                {(profileSettings.zoom * 100).toFixed(0)}%
+                              </span>
+                              <Button
+                                size="sm"
+                                onClick={() =>
+                                  setProfileSettings({
+                                    ...profileSettings,
+                                    zoom: Math.min(2, profileSettings.zoom + 0.1),
+                                  })
+                                }
+                                className="bg-slate-600 hover:bg-slate-500"
+                              >
+                                <Plus className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          </div>
+                          <input
+                            type="range"
+                            min="0.5"
+                            max="2"
+                            step="0.1"
+                            value={profileSettings.zoom}
+                            onChange={(e) =>
+                              setProfileSettings({
+                                ...profileSettings,
+                                zoom: parseFloat(e.target.value),
+                              })
+                            }
+                            className="w-full"
+                          />
+                        </div>
+
+                        {/* Vertical Position Controls */}
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <label className="text-slate-300 text-sm font-medium">Vertical Position (Up/Down)</label>
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                onClick={() =>
+                                  setProfileSettings({
+                                    ...profileSettings,
+                                    positionY: Math.max(-5, profileSettings.positionY - 0.5),
+                                  })
+                                }
+                                className="bg-slate-600 hover:bg-slate-500"
+                              >
+                                <ArrowUp className="w-3 h-3" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                onClick={() =>
+                                  setProfileSettings({
+                                    ...profileSettings,
+                                    positionY: Math.min(5, profileSettings.positionY + 0.5),
+                                  })
+                                }
+                                className="bg-slate-600 hover:bg-slate-500"
+                              >
+                                <ArrowDown className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          </div>
+                          <input
+                            type="range"
+                            min="-5"
+                            max="5"
+                            step="0.1"
+                            value={profileSettings.positionY}
+                            onChange={(e) =>
+                              setProfileSettings({
+                                ...profileSettings,
+                                positionY: parseFloat(e.target.value),
+                              })
+                            }
+                            className="w-full"
+                          />
+                        </div>
+
+                        {/* Horizontal Position Controls */}
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <label className="text-slate-300 text-sm font-medium">Horizontal Position (Left/Right)</label>
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                onClick={() =>
+                                  setProfileSettings({
+                                    ...profileSettings,
+                                    positionX: Math.max(-5, profileSettings.positionX - 0.5),
+                                  })
+                                }
+                                className="bg-slate-600 hover:bg-slate-500"
+                              >
+                                <ArrowLeft className="w-3 h-3" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                onClick={() =>
+                                  setProfileSettings({
+                                    ...profileSettings,
+                                    positionX: Math.min(5, profileSettings.positionX + 0.5),
+                                  })
+                                }
+                                className="bg-slate-600 hover:bg-slate-500"
+                              >
+                                <ArrowRight className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          </div>
+                          <input
+                            type="range"
+                            min="-5"
+                            max="5"
+                            step="0.1"
+                            value={profileSettings.positionX}
+                            onChange={(e) =>
+                              setProfileSettings({
+                                ...profileSettings,
+                                positionX: parseFloat(e.target.value),
+                              })
+                            }
+                            className="w-full"
+                          />
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="grid grid-cols-2 gap-2 pt-2">
+                          <Button
+                            onClick={() => setProfileSettings({ zoom: 1, positionX: 0, positionY: 0 })}
+                            className="bg-slate-600 hover:bg-slate-500 text-white"
+                          >
+                            Reset Position
+                          </Button>
+                          <Button
+                            onClick={saveImageWithSettings}
+                            className="bg-green-600 hover:bg-green-700 text-white"
+                          >
+                            <Check className="w-4 h-4 mr-2" />
+                            Save Changes
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Delete Button */}
+                  {profileImage && (
+                    <Button onClick={deleteProfileImage} variant="destructive" className="w-full">
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Delete Image
+                    </Button>
                   )}
                 </div>
               </div>
-
-              {/* Image Editor Modal */}
-              {showImageEditor && tempImageData && (
-                <div className="mb-6 p-4 bg-slate-700 rounded-lg">
-                  <h4 className="font-bold text-amber-400 mb-4">Adjust Image</h4>
-
-                  <div className="mb-4 flex justify-center">
-                    <div
-                      className="w-40 h-40 rounded-full overflow-hidden border-4 border-amber-400"
-                      style={{
-                        backgroundImage: `url(${tempImageData})`,
-                        backgroundSize: `${tempImageSettings.zoom * 100}%`,
-                        backgroundPosition: `${50 + tempImageSettings.positionX * 10}% ${50 + tempImageSettings.positionY * 10}%`,
-                        backgroundRepeat: 'no-repeat',
-                      }}
-                    />
-                  </div>
-
-                  <div className="space-y-4">
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <label className="text-slate-300 text-sm">Zoom</label>
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            onClick={() =>
-                              setTempImageSettings({
-                                ...tempImageSettings,
-                                zoom: Math.max(0.5, tempImageSettings.zoom - 0.1),
-                              })
-                            }
-                            className="bg-slate-600 hover:bg-slate-500"
-                          >
-                            <Minus className="w-3 h-3" />
-                          </Button>
-                          <span className="text-slate-300 w-12 text-center">
-                            {(tempImageSettings.zoom * 100).toFixed(0)}%
-                          </span>
-                          <Button
-                            size="sm"
-                            onClick={() =>
-                              setTempImageSettings({
-                                ...tempImageSettings,
-                                zoom: Math.min(2, tempImageSettings.zoom + 0.1),
-                              })
-                            }
-                            className="bg-slate-600 hover:bg-slate-500"
-                          >
-                            <Plus className="w-3 h-3" />
-                          </Button>
-                        </div>
-                      </div>
-                      <input
-                        type="range"
-                        min="0.5"
-                        max="2"
-                        step="0.1"
-                        value={tempImageSettings.zoom}
-                        onChange={(e) =>
-                          setTempImageSettings({
-                            ...tempImageSettings,
-                            zoom: parseFloat(e.target.value),
-                          })
-                        }
-                        className="w-full"
-                      />
-                    </div>
-
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <label className="text-slate-300 text-sm">Move Up/Down</label>
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            onClick={() =>
-                              setTempImageSettings({
-                                ...tempImageSettings,
-                                positionY: Math.max(-5, tempImageSettings.positionY - 0.5),
-                              })
-                            }
-                            className="bg-slate-600 hover:bg-slate-500"
-                          >
-                            <ArrowUp className="w-3 h-3" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            onClick={() =>
-                              setTempImageSettings({
-                                ...tempImageSettings,
-                                positionY: Math.min(5, tempImageSettings.positionY + 0.5),
-                              })
-                            }
-                            className="bg-slate-600 hover:bg-slate-500"
-                          >
-                            <ArrowDown className="w-3 h-3" />
-                          </Button>
-                        </div>
-                      </div>
-                      <input
-                        type="range"
-                        min="-5"
-                        max="5"
-                        step="0.1"
-                        value={tempImageSettings.positionY}
-                        onChange={(e) =>
-                          setTempImageSettings({
-                            ...tempImageSettings,
-                            positionY: parseFloat(e.target.value),
-                          })
-                        }
-                        className="w-full"
-                      />
-                    </div>
-
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <label className="text-slate-300 text-sm">Move Left/Right</label>
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            onClick={() =>
-                              setTempImageSettings({
-                                ...tempImageSettings,
-                                positionX: Math.max(-5, tempImageSettings.positionX - 0.5),
-                              })
-                            }
-                            className="bg-slate-600 hover:bg-slate-500"
-                          >
-                            <ArrowLeft className="w-3 h-3" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            onClick={() =>
-                              setTempImageSettings({
-                                ...tempImageSettings,
-                                positionX: Math.min(5, tempImageSettings.positionX + 0.5),
-                              })
-                            }
-                            className="bg-slate-600 hover:bg-slate-500"
-                          >
-                            <ChevronArrow className="w-3 h-3" />
-                          </Button>
-                        </div>
-                      </div>
-                      <input
-                        type="range"
-                        min="-5"
-                        max="5"
-                        step="0.1"
-                        value={tempImageSettings.positionX}
-                        onChange={(e) =>
-                          setTempImageSettings({
-                            ...tempImageSettings,
-                            positionX: parseFloat(e.target.value),
-                          })
-                        }
-                        className="w-full"
-                      />
-                    </div>
-
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={() => setTempImageSettings({ zoom: 1, positionX: 0, positionY: 0 })}
-                        className="flex-1 bg-slate-600 hover:bg-slate-500 text-white"
-                      >
-                        Reset
-                      </Button>
-                      <Button
-                        onClick={saveImageWithSettings}
-                        className="flex-1 bg-green-600 hover:bg-green-700 text-white"
-                      >
-                        <Check className="w-4 h-4 mr-2" />
-                        Save
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              )}
 
               {/* Contact Information Management */}
               <div className="mb-6">

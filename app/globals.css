@@ -99,64 +99,27 @@
   :root {
     --font-sans: var(--font-geist-sans);
     --font-mono: var(--font-geist-mono);
-    /* Light mode - SAP Enterprise Colors */
-    --background: 0 0% 100%;
-    --foreground: 220 13% 5%;
-    --card: 0 0% 100%;
-    --card-foreground: 220 13% 5%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 220 13% 5%;
-    /* Primary: Dark Navy #0F172A */
-    --primary: 220 85% 8%;
-    --primary-foreground: 0 0% 100%;
-    /* Secondary: SAP Blue #0FAAFF */
-    --secondary: 200 100% 50%;
-    --secondary-foreground: 0 0% 100%;
-    --muted: 220 13% 50%;
-    --muted-foreground: 220 13% 30%;
-    /* Accent: Secondary Blue #0070F3 */
-    --accent: 217 100% 48%;
-    --accent-foreground: 0 0% 100%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 100%;
-    /* Borders and inputs */
-    --border: 220 13% 91%;
-    --input: 220 13% 95%;
-    --ring: 200 100% 50%;
-    --chart-1: 200 100% 50%;
-    --chart-2: 217 100% 48%;
-    --chart-3: 220 85% 8%;
-    --chart-4: 200 100% 50%;
-    --chart-5: 217 100% 48%;
-    --radius: 0.5rem;
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 220 13% 5%;
-    --sidebar-primary: 220 85% 8%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 200 100% 50%;
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 200 100% 50%;
-  }
-  .dark {
-    /* Dark mode - Navy background with gold accents */
+    /* Dark mode - Enterprise Premium Colors */
     --background: 220 85% 8%;
     --foreground: 0 0% 100%;
     --card: 220 13% 18%;
     --card-foreground: 0 0% 100%;
     --popover: 220 13% 18%;
     --popover-foreground: 0 0% 100%;
+    /* Primary: White */
     --primary: 0 0% 100%;
     --primary-foreground: 220 85% 8%;
+    /* Secondary: Gold #F59E0B */
     --secondary: 38 92% 50%;
     --secondary-foreground: 0 0% 0%;
     --muted: 220 13% 55%;
-    --muted-foreground: 220 13% 80%;
-    /* Accent: Gold #F59E0B */
-    --accent: 38 92% 50%;
+    --muted-foreground: 203 10% 81%;
+    /* Accent: Gold #FBBF24 */
+    --accent: 38 92% 54%;
     --accent-foreground: 0 0% 0%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 0%;
+    /* Borders and inputs */
     --border: 220 13% 28%;
     --input: 220 13% 20%;
     --ring: 38 92% 50%;
@@ -165,6 +128,7 @@
     --chart-3: 0 0% 100%;
     --chart-4: 38 92% 50%;
     --chart-5: 200 100% 50%;
+    --radius: 0.5rem;
     --sidebar-background: 220 13% 18%;
     --sidebar-foreground: 0 0% 100%;
     --sidebar-primary: 0 0% 100%;
@@ -174,6 +138,7 @@
     --sidebar-border: 220 13% 28%;
     --sidebar-ring: 38 92% 50%;
   }
+
 }
 
 @layer base {

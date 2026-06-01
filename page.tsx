@@ -335,7 +335,7 @@ export default function Portfolio() {
       {/* Navigation */}
       <nav className={`sticky top-0 z-40 ${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'} border-b transition-colors duration-300`}>
         <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className={`text-2xl font-bold ${theme === 'dark' ? 'text-amber-400' : 'text-emerald-600'}`}>
+          <h1 className={`text-2xl font-bold ${theme === 'dark' ? 'text-amber-400' : 'text-blue-600'}`}>
             {details.name}
           </h1>
           <div className="flex gap-2 items-center">
@@ -364,7 +364,7 @@ export default function Portfolio() {
         <div className="max-w-6xl mx-auto px-4 grid md:grid-cols-2 gap-12 items-center">
           {/* Profile Image */}
           <div className="flex justify-center">
-            <div className="w-64 h-64 rounded-full overflow-hidden border-4 border-emerald-500 dark:border-amber-400 shadow-2xl">
+            <div className="w-64 h-64 rounded-full overflow-hidden border-4 border-blue-500 dark:border-amber-400 shadow-2xl">
               {profileImage ? (
                 <div
                   className="w-full h-full bg-cover bg-center"
@@ -385,7 +385,7 @@ export default function Portfolio() {
             <h2 className={`text-5xl font-bold mb-4 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
               {details.name}
             </h2>
-            <p className={`text-2xl font-semibold mb-2 ${theme === 'dark' ? 'text-amber-400' : 'text-emerald-600'}`}>
+            <p className={`text-2xl font-semibold mb-2 ${theme === 'dark' ? 'text-amber-400' : 'text-blue-600'}`}>
               {details.headline}
             </p>
             <p className={`text-lg mb-6 ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>
@@ -396,7 +396,7 @@ export default function Portfolio() {
             <div className="flex flex-wrap gap-4">
               <Button
                 onClick={() => window.location.href = `mailto:${details.email}`}
-                className={theme === 'dark' ? 'bg-amber-500 hover:bg-amber-600 text-slate-900' : 'bg-emerald-600 hover:bg-emerald-700 text-white'}
+                className={theme === 'dark' ? 'bg-amber-500 hover:bg-amber-600 text-slate-900' : 'bg-blue-600 hover:bg-blue-700 text-white'}
               >
                 <Mail className="w-4 h-4 mr-2" />
                 Contact Me
@@ -404,7 +404,7 @@ export default function Portfolio() {
               <Button
                 variant="outline"
                 onClick={() => window.open(details.linkedin, '_blank')}
-                className={theme === 'dark' ? 'border-amber-400 text-amber-400' : 'border-emerald-600 text-emerald-600'}
+                className={theme === 'dark' ? 'border-amber-400 text-amber-400' : 'border-blue-600 text-blue-600'}
               >
                 <Linkedin className="w-4 h-4 mr-2" />
                 LinkedIn
@@ -412,7 +412,7 @@ export default function Portfolio() {
               <Button
                 variant="outline"
                 onClick={() => window.open(details.github, '_blank')}
-                className={theme === 'dark' ? 'border-amber-400 text-amber-400' : 'border-emerald-600 text-emerald-600'}
+                className={theme === 'dark' ? 'border-amber-400 text-amber-400' : 'border-blue-600 text-blue-600'}
               >
                 <Github className="w-4 h-4 mr-2" />
                 GitHub
@@ -421,7 +421,7 @@ export default function Portfolio() {
                 <Button
                   variant="outline"
                   onClick={() => downloadResume()}
-                  className={theme === 'dark' ? 'border-amber-400 text-amber-400' : 'border-emerald-600 text-emerald-600'}
+                  className={theme === 'dark' ? 'border-amber-400 text-amber-400' : 'border-blue-600 text-blue-600'}
                 >
                   <Download className="w-4 h-4 mr-2" />
                   Resume
@@ -442,14 +442,14 @@ export default function Portfolio() {
             {competencies.map((comp, idx) => (
               <Card key={idx} className={theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-white'}>
                 <CardContent className="p-6">
-                  <h3 className={`font-bold mb-4 ${theme === 'dark' ? 'text-amber-400' : 'text-emerald-600'}`}>
+                  <h3 className={`font-bold mb-4 ${theme === 'dark' ? 'text-amber-400' : 'text-blue-600'}`}>
                     {comp.category}
                   </h3>
                   <div className="space-y-2">
                     {comp.skills.map((skill, sidx) => (
                       <Badge
                         key={sidx}
-                        className={`block text-center ${theme === 'dark' ? 'bg-slate-700 text-amber-300' : 'bg-emerald-100 text-emerald-800'}`}
+                        className={`block text-center ${theme === 'dark' ? 'bg-slate-700 text-amber-300' : 'bg-blue-100 text-blue-800'}`}
                       >
                         {skill}
                       </Badge>
@@ -474,7 +474,7 @@ export default function Portfolio() {
                 <CardContent className="p-8">
                   <div className="flex justify-between items-start mb-4">
                     <div>
-                      <h3 className={`text-2xl font-bold ${theme === 'dark' ? 'text-amber-400' : 'text-emerald-600'}`}>
+                      <h3 className={`text-2xl font-bold ${theme === 'dark' ? 'text-amber-400' : 'text-blue-600'}`}>
                         {project.name}
                       </h3>
                       <p className={`font-semibold ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
@@ -488,7 +488,7 @@ export default function Portfolio() {
                   <div className={`space-y-2 ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>
                     {project.achievements.map((achievement, aidx) => (
                       <div key={aidx} className="flex items-start gap-2">
-                        <Check className={`w-5 h-5 mt-0.5 flex-shrink-0 ${theme === 'dark' ? 'text-amber-400' : 'text-emerald-600'}`} />
+                        <Check className={`w-5 h-5 mt-0.5 flex-shrink-0 ${theme === 'dark' ? 'text-amber-400' : 'text-blue-600'}`} />
                         <span>{achievement}</span>
                       </div>
                     ))}
@@ -512,7 +512,7 @@ export default function Portfolio() {
                 <div className="space-y-6">
                   {/* Resume Metadata */}
                   <div className={`p-4 rounded-lg ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-100'}`}>
-                    <h3 className={`font-semibold mb-2 ${theme === 'dark' ? 'text-amber-400' : 'text-emerald-600'}`}>
+                    <h3 className={`font-semibold mb-2 ${theme === 'dark' ? 'text-amber-400' : 'text-blue-600'}`}>
                       {resumeMetadata.name}
                     </h3>
                     <div className={`text-sm space-y-1 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
@@ -525,7 +525,7 @@ export default function Portfolio() {
                   <div className="flex flex-wrap gap-4">
                     <Button
                       onClick={() => downloadResume()}
-                      className={theme === 'dark' ? 'bg-amber-500 hover:bg-amber-600 text-slate-900' : 'bg-emerald-600 hover:bg-emerald-700 text-white'}
+                      className={theme === 'dark' ? 'bg-amber-500 hover:bg-amber-600 text-slate-900' : 'bg-blue-600 hover:bg-blue-700 text-white'}
                     >
                       <Download className="w-4 h-4 mr-2" />
                       Download Resume
@@ -535,7 +535,7 @@ export default function Portfolio() {
                         <Button
                           variant="outline"
                           onClick={() => document.getElementById('resumeUpload')?.click()}
-                          className={theme === 'dark' ? 'border-amber-400 text-amber-400' : 'border-emerald-600 text-emerald-600'}
+                          className={theme === 'dark' ? 'border-amber-400 text-amber-400' : 'border-blue-600 text-blue-600'}
                         >
                           <Upload className="w-4 h-4 mr-2" />
                           Replace Resume
@@ -565,6 +565,112 @@ export default function Portfolio() {
         </section>
       )}
 
+      {/* SAP Certifications & Learning Section */}
+      <section className={`py-20 ${theme === 'dark' ? 'bg-slate-900' : 'bg-slate-50'} transition-colors duration-300`}>
+        <div className="max-w-6xl mx-auto px-4">
+          <h2 className={`text-3xl font-bold mb-12 text-center ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+            SAP Certifications & Learning
+          </h2>
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Certification 1 */}
+            <Card className={`transition-all duration-300 hover:shadow-lg cursor-default ${theme === 'dark' ? 'bg-slate-800 border-slate-700 hover:border-amber-400' : 'bg-white hover:border-blue-500'}`}>
+              <CardContent className="p-6">
+                <div className="flex items-start gap-4">
+                  <div className={`p-3 rounded-lg ${theme === 'dark' ? 'bg-amber-500/10' : 'bg-blue-500/10'}`}>
+                    <svg className={`w-6 h-6 ${theme === 'dark' ? 'text-amber-400' : 'text-blue-600'}`} fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className={`font-bold text-lg ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                      Business Processes in SAP S/4HANA Sourcing and Procurement
+                    </h3>
+                    <p className={`text-sm mt-2 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
+                      SAP Learning
+                    </p>
+                    <p className={`text-xs mt-1 ${theme === 'dark' ? 'text-slate-500' : 'text-slate-500'}`}>
+                      Completed May 2026
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Certification 2 */}
+            <Card className={`transition-all duration-300 hover:shadow-lg cursor-default ${theme === 'dark' ? 'bg-slate-800 border-slate-700 hover:border-amber-400' : 'bg-white hover:border-blue-500'}`}>
+              <CardContent className="p-6">
+                <div className="flex items-start gap-4">
+                  <div className={`p-3 rounded-lg ${theme === 'dark' ? 'bg-amber-500/10' : 'bg-blue-500/10'}`}>
+                    <svg className={`w-6 h-6 ${theme === 'dark' ? 'text-amber-400' : 'text-blue-600'}`} fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className={`font-bold text-lg ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                      Exploring SAP Cloud ERP
+                    </h3>
+                    <p className={`text-sm mt-2 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
+                      SAP Learning
+                    </p>
+                    <p className={`text-xs mt-1 ${theme === 'dark' ? 'text-slate-500' : 'text-slate-500'}`}>
+                      Completed May 2026
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Certification 3 */}
+            <Card className={`transition-all duration-300 hover:shadow-lg cursor-default ${theme === 'dark' ? 'bg-slate-800 border-slate-700 hover:border-amber-400' : 'bg-white hover:border-blue-500'}`}>
+              <CardContent className="p-6">
+                <div className="flex items-start gap-4">
+                  <div className={`p-3 rounded-lg ${theme === 'dark' ? 'bg-amber-500/10' : 'bg-blue-500/10'}`}>
+                    <svg className={`w-6 h-6 ${theme === 'dark' ? 'text-amber-400' : 'text-blue-600'}`} fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className={`font-bold text-lg ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                      SAP Ariba Sourcing Overview
+                    </h3>
+                    <p className={`text-sm mt-2 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
+                      SAP Learning
+                    </p>
+                    <p className={`text-xs mt-1 ${theme === 'dark' ? 'text-slate-500' : 'text-slate-500'}`}>
+                      Completed May 2026
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Certification 4 */}
+            <Card className={`transition-all duration-300 hover:shadow-lg cursor-default ${theme === 'dark' ? 'bg-slate-800 border-slate-700 hover:border-amber-400' : 'bg-white hover:border-blue-500'}`}>
+              <CardContent className="p-6">
+                <div className="flex items-start gap-4">
+                  <div className={`p-3 rounded-lg ${theme === 'dark' ? 'bg-amber-500/10' : 'bg-blue-500/10'}`}>
+                    <svg className={`w-6 h-6 ${theme === 'dark' ? 'text-amber-400' : 'text-blue-600'}`} fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className={`font-bold text-lg ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                      Introduction to AI Core
+                    </h3>
+                    <p className={`text-sm mt-2 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
+                      SAP Learning
+                    </p>
+                    <p className={`text-xs mt-1 ${theme === 'dark' ? 'text-slate-500' : 'text-slate-500'}`}>
+                      Completed May 2026
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
       {/* Contact Section */}
       <section className={`py-20 ${theme === 'dark' ? 'bg-slate-800' : 'bg-white'} transition-colors duration-300`}>
         <div className="max-w-6xl mx-auto px-4">
@@ -575,10 +681,10 @@ export default function Portfolio() {
             <Card className={theme === 'dark' ? 'bg-slate-700 border-slate-600' : 'bg-slate-50'}>
               <CardContent className="p-8">
                 <div className="flex items-center gap-4 mb-6">
-                  <Mail className={`w-6 h-6 ${theme === 'dark' ? 'text-amber-400' : 'text-emerald-600'}`} />
+                  <Mail className={`w-6 h-6 ${theme === 'dark' ? 'text-amber-400' : 'text-blue-600'}`} />
                   <div>
                     <p className={`text-sm ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>Email</p>
-                    <a href={`mailto:${details.email}`} className={`font-semibold ${theme === 'dark' ? 'text-white hover:text-amber-400' : 'text-slate-900 hover:text-emerald-600'}`}>
+                    <a href={`mailto:${details.email}`} className={`font-semibold ${theme === 'dark' ? 'text-white hover:text-amber-400' : 'text-slate-900 hover:text-blue-600'}`}>
                       {details.email}
                     </a>
                   </div>
@@ -589,10 +695,10 @@ export default function Portfolio() {
             <Card className={theme === 'dark' ? 'bg-slate-700 border-slate-600' : 'bg-slate-50'}>
               <CardContent className="p-8">
                 <div className="flex items-center gap-4">
-                  <Phone className={`w-6 h-6 ${theme === 'dark' ? 'text-amber-400' : 'text-emerald-600'}`} />
+                  <Phone className={`w-6 h-6 ${theme === 'dark' ? 'text-amber-400' : 'text-blue-600'}`} />
                   <div>
                     <p className={`text-sm ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>Phone</p>
-                    <a href={`tel:${details.phone}`} className={`font-semibold ${theme === 'dark' ? 'text-white hover:text-amber-400' : 'text-slate-900 hover:text-emerald-600'}`}>
+                    <a href={`tel:${details.phone}`} className={`font-semibold ${theme === 'dark' ? 'text-white hover:text-amber-400' : 'text-slate-900 hover:text-blue-600'}`}>
                       {details.phone}
                     </a>
                   </div>
@@ -619,7 +725,7 @@ export default function Portfolio() {
             <CardContent className="p-6">
               {/* Header */}
               <div className="flex justify-between items-center mb-6">
-                <h3 className={`text-2xl font-bold ${theme === 'dark' ? 'text-amber-400' : 'text-emerald-600'}`}>
+                <h3 className={`text-2xl font-bold ${theme === 'dark' ? 'text-amber-400' : 'text-blue-600'}`}>
                   Admin Settings
                 </h3>
                 <Button
@@ -636,7 +742,7 @@ export default function Portfolio() {
               <div className={`p-4 rounded-lg mb-6 ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-100'}`}>
                 <Button
                   onClick={toggleAdminMode}
-                  className={isAdmin ? (theme === 'dark' ? 'bg-amber-500 hover:bg-amber-600' : 'bg-emerald-600 hover:bg-emerald-700') : 'bg-gray-400'}
+                  className={isAdmin ? (theme === 'dark' ? 'bg-amber-500 hover:bg-amber-600' : 'bg-blue-600 hover:bg-blue-700') : 'bg-gray-400'}
                 >
                   {isAdmin ? 'Admin Mode: ON' : 'Admin Mode: OFF'}
                 </Button>
@@ -644,14 +750,14 @@ export default function Portfolio() {
 
               {/* Profile Image Management */}
               <div className={`p-4 rounded-lg mb-6 ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-100'}`}>
-                <h4 className={`font-bold mb-4 ${theme === 'dark' ? 'text-amber-400' : 'text-emerald-600'}`}>
+                <h4 className={`font-bold mb-4 ${theme === 'dark' ? 'text-amber-400' : 'text-blue-600'}`}>
                   Profile Image Management
                 </h4>
                 <div className="flex flex-wrap gap-2">
                   <Button
                     size="sm"
                     onClick={() => document.getElementById('profileImageUpload')?.click()}
-                    className={theme === 'dark' ? 'bg-amber-500 hover:bg-amber-600 text-slate-900' : 'bg-emerald-600 hover:bg-emerald-700 text-white'}
+                    className={theme === 'dark' ? 'bg-amber-500 hover:bg-amber-600 text-slate-900' : 'bg-blue-600 hover:bg-blue-700 text-white'}
                   >
                     <Upload className="w-4 h-4 mr-2" />
                     Upload Image
@@ -679,13 +785,13 @@ export default function Portfolio() {
 
               {/* Image Editor Modal */}
               {showImageEditor && tempImageData && (
-                <div className={`p-4 rounded-lg mb-6 border-2 ${theme === 'dark' ? 'border-amber-400 bg-slate-700' : 'border-emerald-600 bg-slate-100'}`}>
-                  <h5 className={`font-bold mb-4 ${theme === 'dark' ? 'text-amber-400' : 'text-emerald-600'}`}>
+                <div className={`p-4 rounded-lg mb-6 border-2 ${theme === 'dark' ? 'border-amber-400 bg-slate-700' : 'border-blue-600 bg-slate-100'}`}>
+                  <h5 className={`font-bold mb-4 ${theme === 'dark' ? 'text-amber-400' : 'text-blue-600'}`}>
                     Position Your Image
                   </h5>
 
                   {/* Preview */}
-                  <div className="w-32 h-32 rounded-full overflow-hidden mx-auto mb-4 border-2 border-emerald-500 dark:border-amber-400">
+                  <div className="w-32 h-32 rounded-full overflow-hidden mx-auto mb-4 border-2 border-blue-500 dark:border-amber-400">
                     <div
                       className="w-full h-full bg-cover bg-center"
                       style={{
@@ -757,7 +863,7 @@ export default function Portfolio() {
                     <Button
                       size="sm"
                       onClick={saveProfileImage}
-                      className={theme === 'dark' ? 'bg-amber-500 hover:bg-amber-600 text-slate-900' : 'bg-emerald-600 hover:bg-emerald-700 text-white'}
+                      className={theme === 'dark' ? 'bg-amber-500 hover:bg-amber-600 text-slate-900' : 'bg-blue-600 hover:bg-blue-700 text-white'}
                     >
                       Save Image
                     </Button>
@@ -778,7 +884,7 @@ export default function Portfolio() {
 
               {/* Contact Information */}
               <div className={`p-4 rounded-lg mb-6 ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-100'}`}>
-                <h4 className={`font-bold mb-4 ${theme === 'dark' ? 'text-amber-400' : 'text-emerald-600'}`}>
+                <h4 className={`font-bold mb-4 ${theme === 'dark' ? 'text-amber-400' : 'text-blue-600'}`}>
                   Contact Information
                 </h4>
                 <form onSubmit={updatePersonalDetails} className="space-y-4">
@@ -839,7 +945,7 @@ export default function Portfolio() {
                   </div>
                   <Button
                     type="submit"
-                    className={theme === 'dark' ? 'bg-amber-500 hover:bg-amber-600 text-slate-900 w-full' : 'bg-emerald-600 hover:bg-emerald-700 text-white w-full'}
+                    className={theme === 'dark' ? 'bg-amber-500 hover:bg-amber-600 text-slate-900 w-full' : 'bg-blue-600 hover:bg-blue-700 text-white w-full'}
                   >
                     Save Contact Information
                   </Button>
@@ -849,13 +955,13 @@ export default function Portfolio() {
               {/* Resume Management (Admin Only) */}
               {isAdmin && resumeConfig_.enabled && (
                 <div className={`p-4 rounded-lg mb-6 ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-100'}`}>
-                  <h4 className={`font-bold mb-4 ${theme === 'dark' ? 'text-amber-400' : 'text-emerald-600'}`}>
+                  <h4 className={`font-bold mb-4 ${theme === 'dark' ? 'text-amber-400' : 'text-blue-600'}`}>
                     Resume Management
                   </h4>
                   <Button
                     size="sm"
                     onClick={() => document.getElementById('resumeUploadAdmin')?.click()}
-                    className={theme === 'dark' ? 'bg-amber-500 hover:bg-amber-600 text-slate-900' : 'bg-emerald-600 hover:bg-emerald-700 text-white'}
+                    className={theme === 'dark' ? 'bg-amber-500 hover:bg-amber-600 text-slate-900' : 'bg-blue-600 hover:bg-blue-700 text-white'}
                   >
                     <Upload className="w-4 h-4 mr-2" />
                     Upload Resume
@@ -872,12 +978,12 @@ export default function Portfolio() {
 
               {/* Theme Settings */}
               <div className={`p-4 rounded-lg mb-6 ${theme === 'dark' ? 'bg-slate-700' : 'bg-slate-100'}`}>
-                <h4 className={`font-bold mb-4 ${theme === 'dark' ? 'text-amber-400' : 'text-emerald-600'}`}>
+                <h4 className={`font-bold mb-4 ${theme === 'dark' ? 'text-amber-400' : 'text-blue-600'}`}>
                   Theme
                 </h4>
                 <Button
                   onClick={toggleTheme}
-                  className={theme === 'dark' ? 'bg-amber-500 hover:bg-amber-600 text-slate-900' : 'bg-emerald-600 hover:bg-emerald-700 text-white'}
+                  className={theme === 'dark' ? 'bg-amber-500 hover:bg-amber-600 text-slate-900' : 'bg-blue-600 hover:bg-blue-700 text-white'}
                 >
                   {theme === 'dark' ? <Sun className="w-4 h-4 mr-2" /> : <Moon className="w-4 h-4 mr-2" />}
                   Current: {theme === 'dark' ? 'Dark Mode' : 'Light Mode'}

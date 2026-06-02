@@ -701,8 +701,9 @@ export default function Portfolio() {
               >
                 Close Admin Panel
               </Button>
+              </div>
             </div>
-            </div>
+          </div>
         </div>
       )}
 

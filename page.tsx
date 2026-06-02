@@ -304,18 +304,22 @@ export default function Portfolio() {
 
       {/* Admin Settings Panel */}
       {showAdminPanel && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto">
-          <Card className="w-full max-w-2xl bg-slate-800 border-slate-700 my-8">
-            <CardContent className="p-8">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-amber-400">Admin Settings</h2>
-                <button
-                  onClick={() => setShowAdminPanel(false)}
-                  className="text-slate-400 hover:text-white"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="w-full max-w-2xl bg-slate-800 border border-slate-700 rounded-lg flex flex-col max-h-[90vh] overflow-hidden">
+            {/* Header - Sticky */}
+            <div className="flex justify-between items-center px-8 py-6 border-b border-slate-700 flex-shrink-0">
+              <h2 className="text-2xl font-bold text-amber-400">Admin Settings</h2>
+              <button
+                onClick={() => setShowAdminPanel(false)}
+                className="text-slate-400 hover:text-white transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Content - Scrollable */}
+            <div className="overflow-y-auto flex-1">
+              <div className="px-8 py-6">
 
               {/* Admin Mode Toggle */}
               <div className="mb-6 p-4 bg-slate-700 rounded-lg">
@@ -697,8 +701,8 @@ export default function Portfolio() {
               >
                 Close Admin Panel
               </Button>
-            </CardContent>
-          </Card>
+            </div>
+            </div>
         </div>
       )}
 

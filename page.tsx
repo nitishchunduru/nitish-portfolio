@@ -104,9 +104,7 @@ export default function Portfolio() {
   const [isAdmin, setIsAdmin] = useState(false)
   const [profileImage, setProfileImage] = useState(null)
   const [profileSettings, setProfileSettings] = useState({ zoom: 1, positionX: 0, positionY: 0 })
-  const [showImageEditor, setShowImageEditor] = useState(false)
-  const [tempImageData, setTempImageData] = useState(null)
-  const [tempImageSettings, setTempImageSettings] = useState({ zoom: 1, positionX: 0, positionY: 0 })
+
   const [details, setDetails] = useState(personalDetails)
   const [resumeData, setResumeData] = useState(null)
   const [resumeMetadata, setResumeMetadata] = useState({
@@ -365,7 +363,7 @@ export default function Portfolio() {
                         <div
                           className="w-40 h-40 rounded-full overflow-hidden border-4 border-amber-400"
                           style={{
-                            backgroundImage: `url(${tempImageData})`,
+                            backgroundImage: `url(${profileImage})`,
                             backgroundSize: `${profileSettings.zoom * 100}%`,
                             backgroundPosition: `${50 + profileSettings.positionX * 10}% ${50 + profileSettings.positionY * 10}%`,
                             backgroundRepeat: 'no-repeat',

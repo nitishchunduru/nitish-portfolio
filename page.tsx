@@ -810,8 +810,9 @@ export default function Portfolio() {
           <div className="grid md:grid-cols-1 gap-8">
             <Card className="bg-slate-700 border-slate-600">
               <CardContent className="p-6">
-                <h3 className="text-2xl font-bold text-amber-400 mb-2">Cohance Migration Support SAP MM S4HANA</h3>
-                <p className="font-semibold text-slate-300 mb-4">SAP MM Trainee Consultant</p>
+                <h3 className="text-2xl font-bold text-amber-400 mb-2">Cohance SAP S/4HANA Migration Support Project</h3>
+                <p className="font-semibold text-slate-300 mb-2">SAP MM Trainee Consultant</p>
+                <p className="text-slate-400 mb-4 italic">Supported SAP S/4HANA migration activities including procurement processes, inventory management, data validation, testing, issue resolution, and post-migration support.</p>
                 <div className="grid md:grid-cols-2 gap-6">
                   <div>
                     <p className="font-bold text-amber-400 mb-3">Key Activities:</p>
@@ -857,7 +858,7 @@ export default function Portfolio() {
                   <div>
                     <p className="font-bold text-amber-400 mb-3">Technologies & Skills:</p>
                     <div className="flex flex-wrap gap-2">
-                      {['SAP MM', 'SAP S4HANA', 'SAP Fiori', 'Data Validation', 'Testing', 'PR/PO', 'GR/GI'].map(
+                      {['SAP MM', 'SAP S/4HANA', 'SAP Fiori', 'Purchase Requisition', 'Purchase Order', 'Goods Receipt', 'Goods Issue', 'Inventory Management', 'Procurement', 'Functional Testing', 'Data Validation'].map(
                         (skill, i) => (
                           <Badge key={i} className="bg-slate-600 text-amber-300 hover:bg-slate-500">
                             {skill}

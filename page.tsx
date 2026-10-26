@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 
 // Central Resume URL Variable
-const resumeUrl = "/Nitish_Chunduru_SAP_MM_Resume.pdf"
+const resumeUrl = "/Nitish_Chunduru_SAP_MM_Consultant_Resume.pdf.pdf"
 
 const personalDetails = {
   name: "Nitish Chunduru",
@@ -745,7 +745,7 @@ export default function Portfolio() {
                     GitHub
                   </Button>
                 </a>
-                <a href={resumeData || resumeUrl} target="_blank" rel="noopener noreferrer">
+                <a href={resumeUrl} target="_blank" rel="noopener noreferrer">
                   <Button variant="outline" className="border-amber-400 text-amber-400 hover:bg-amber-400/10">
                     <Download className="w-4 h-4 mr-2" />
                     Resume

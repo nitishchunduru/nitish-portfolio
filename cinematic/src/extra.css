@@ -51,3 +51,4 @@ html[data-corners=soft] :is(.project-open,.primary-link,.outline-button,.solid-b
 .ad-segment{display:flex;flex-wrap:wrap;gap:6px}.ad-segment button{flex:1;min-height:38px;padding:0 10px;border:1px solid var(--a-line);border-radius:7px;font-size:12px;white-space:nowrap;color:var(--a-ink)}.ad-segment button.on{background:var(--a-ink);color:var(--a-bg);border-color:var(--a-ink)}
 .ad-section{display:flex;align-items:center;gap:6px;min-height:46px;border-bottom:1px solid var(--a-line)}.ad-section>span{flex:1}.ad-section.off>span{color:var(--a-mut);text-decoration:line-through}
 @media(max-width:600px){.breakdown-copy{min-width:0}.breakdown-copy h2{font-size:min(45px,11.4vw);overflow-wrap:anywhere}.about-lead h2,.contact-intro h2,.recognition-intro h2{overflow-wrap:anywhere}}
+@media(max-width:600px){.awards-panel>h3 br{display:block}.awards-panel>h3>span{margin-left:0}}

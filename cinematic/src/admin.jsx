@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
-import { X, Upload, Trash2, ArrowUp, ArrowDown, Plus, Eye, EyeOff, Undo2, Download, FileUp, Save } from 'lucide-react';
+import { X, Upload, Lock, Trash2, ArrowUp, ArrowDown, Plus, Eye, EyeOff, Undo2, Download, FileUp, Save } from 'lucide-react';
 import { defaults, PRESETS, SECTION_LABELS, merge } from './defaults.js';
-import { saveConfig, saveFile, imageToDataUrl } from './storage.js';
+import { saveConfig, saveFile, imageToDataUrl, fileBytes, lockResume, unlockResume, toDataUrl } from './storage.js';
 
 const get = (o, path) => path.split('.').reduce((a, k) => a?.[k], o);
 const set = (o, path, value) => {
@@ -10,7 +10,7 @@ const set = (o, path, value) => {
   copy[head] = rest.length ? set(o[head], rest.join('.'), value) : value;
   return copy;
 };
-const TABS = ['Images', 'Content', 'Theme', 'Layout', '3D', 'Backup'];
+const TABS = ['Images', 'Resume', 'Content', 'Theme', 'Layout', '3D', 'Backup'];
 const DISPLAY = ['Anton', 'Bebas Neue', 'Oswald', 'Archivo Black'];
 const BODY = ['Manrope', 'IBM Plex Sans', 'DM Sans'];
 
@@ -61,6 +61,10 @@ export function Admin({ config, setConfig, saved, setSaved, mode, onClose }) {
   const [busy, setBusy] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
   const importer = useRef(null), cvInput = useRef(null);
+  const [code, setCode] = useState('');
+  const [confirmRemove, setConfirmRemove] = useState(false);
+  const resume = config.resume;
+  const setResume = patch => { setConfig(c => ({ ...c, resume: { ...c.resume, ...patch } })); setStatus(''); };
   const change = (path, value) => { setConfig(c => set(c, path, value)); setStatus(''); };
   const bind = (path, label, area) => <Text key={path} id={`f-${path}`} label={label} area={area} value={get(config, path)} onChange={v => change(path, v)} />;
   const dirty = JSON.stringify(config) !== JSON.stringify(saved);
@@ -74,11 +78,20 @@ export function Admin({ config, setConfig, saved, setSaved, mode, onClose }) {
   const hide = id => change('layout.hidden', layout.hidden.includes(id) ? layout.hidden.filter(x => x !== id) : [...layout.hidden, id]);
   const save = async () => {
     setBusy(true); setStatus('Saving…');
-    const r = await saveConfig(config);
+    let draft = config;
+    try {
+      if (resume.access === 'private') draft = { ...draft, resume: { ...resume, file: '', encrypted: null } };
+      if (resume.access === 'public' && !resume.file) throw new Error(resume.encrypted ? 'Enter your access code and press Unlock, or upload the resume again.' : 'Upload a resume first, or choose Nobody.');
+      if (resume.access === 'code' && resume.file) {
+        if (code.length < 6) throw new Error('Enter an access code of at least 6 characters.');
+        draft = { ...draft, resume: { ...resume, file: '', encrypted: await lockResume(await fileBytes(resume.file), code) } };
+      } else if (resume.access === 'code' && !resume.encrypted) throw new Error('Upload a resume first.');
+    } catch (e) { setBusy(false); return setStatus(e.message === 'missing' ? 'The resume file is missing. Upload it again.' : e.message); }
+    const r = await saveConfig(draft);
     setBusy(false);
     if (r.error) return setStatus(r.error);
-    setConfig(r.next); setSaved(r.next);
-    setStatus(r.where === 'live' ? 'Saved. Everyone now sees this version.' : 'Saved in this browser. Export the file to update the live site.');
+    setConfig(r.next); setSaved(r.next); setCode('');
+    setStatus(r.warning || (r.where === 'live' ? 'Saved. Everyone now sees this version.' : 'Saved in this browser. Export the file to update the live site.'));
   };
   const importFile = async file => {
     try { setConfig(merge(JSON.parse(await file.text()))); setStatus('Imported. Press Save to keep it.'); }
@@ -87,8 +100,14 @@ export function Admin({ config, setConfig, saved, setSaved, mode, onClose }) {
   const cvUpload = file => {
     if (!file) return;
     if (file.type !== 'application/pdf') return setStatus('Choose a PDF file.');
-    if (file.size > 4 * 1048576) return setStatus('Choose a PDF under 4 MB.');
-    const r = new FileReader(); r.onload = () => change('cv', r.result); r.readAsDataURL(file);
+    if (file.size > 6 * 1048576) return setStatus('Choose a PDF under 6 MB.');
+    const r = new FileReader();
+    r.onload = () => { setResume({ file: r.result, encrypted: null, name: file.name, updated: new Date().toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }), access: resume.access === 'private' ? 'public' : resume.access }); setStatus('Resume ready. Press Save to publish it.'); };
+    r.readAsDataURL(file);
+  };
+  const unlock = async () => {
+    try { setResume({ file: toDataUrl(await unlockResume(resume.encrypted, code)), encrypted: null }); setCode(''); setStatus('Unlocked. Choose who can see it, then press Save.'); }
+    catch { setStatus('That access code is not correct.'); }
   };
   const imageProps = { onError: setStatus };
   return <aside className="admin" role="dialog" aria-label="Portfolio admin settings">
@@ -98,14 +117,31 @@ export function Admin({ config, setConfig, saved, setSaved, mode, onClose }) {
       {tab === 'Images' && <>
         <ImageField id="img-portrait" label="Hero portrait" hint="A transparent PNG looks best. It stands in front of the 3D scene." value={config.images.portrait} onChange={v => change('images.portrait', v)} {...imageProps} />
         <Group title="Engagement images" open>{config.projects.map((p, i) => <ImageField key={p.id || i} id={`img-p-${i}`} label={p.title} value={p.image} onChange={v => change('projects', config.projects.map((x, n) => n === i ? { ...x, image: v } : x))} {...imageProps} />)}</Group>
+        <Group title="Company project images">{config.company.map((p, i) => <ImageField key={p.id || i} id={`img-co-${i}`} label={p.title} hint="Without an image, the logo appears." value={p.image} onChange={v => change('company', config.company.map((x, n) => n === i ? { ...x, image: v } : x))} {...imageProps} />)}</Group>
         <Group title="Before and after slider"><ImageField id="img-before" label="Before" value={config.images.before} onChange={v => change('images.before', v)} {...imageProps} /><ImageField id="img-after" label="After" value={config.images.after} onChange={v => change('images.after', v)} {...imageProps} /></Group>
         <Group title="Client logos">{config.brands.map((b, i) => <ImageField key={i} id={`img-b-${i}`} label={b.name} hint="Without a logo, the name appears as text." maxEdge={500} value={b.image} onChange={v => change('brands', config.brands.map((x, n) => n === i ? { ...x, image: v } : x))} {...imageProps} />)}</Group>
         <Group title="Course certificates">{config.courses.map((c, i) => <ImageField key={i} id={`img-c-${i}`} label={c.title} value={c.image} onChange={v => change('courses', config.courses.map((x, n) => n === i ? { ...x, image: v } : x))} {...imageProps} />)}</Group>
+      </>}
+      {tab === 'Resume' && <>
+        <div className="ad-resume"><strong>{resume.access === 'private' || (!resume.file && !resume.encrypted) ? 'No resume on the site' : resume.name}</strong>{resume.updated && (resume.file || resume.encrypted) && <small>Updated {resume.updated}</small>}{resume.encrypted && <small><Lock size={12} /> Locked with an access code</small>}</div>
+        <div className="ad-row"><button type="button" className="ad-btn" onClick={() => cvInput.current.click()}><FileUp size={14} /> {resume.file || resume.encrypted ? 'Replace resume' : 'Upload resume'}</button>
+          {(resume.file || resume.encrypted) && (confirmRemove ? <><button type="button" className="ad-btn danger" onClick={() => { setResume({ file: '', encrypted: null, access: 'private' }); setConfirmRemove(false); setStatus('Resume removed. Press Save to publish this.'); }}>Yes, remove</button><button type="button" className="ad-btn ghost" onClick={() => setConfirmRemove(false)}>Cancel</button></> : <button type="button" className="ad-btn ghost" onClick={() => setConfirmRemove(true)}><Trash2 size={13} /> Remove</button>)}
+          <input id="cv-file" ref={cvInput} type="file" accept="application/pdf" hidden onChange={e => { cvUpload(e.target.files[0]); e.target.value = ''; }} /></div>
+        <h4>Who can see it</h4>{choice('resume.access', [['public', 'Everyone'], ['code', 'Access code'], ['private', 'Nobody']])}
+        <p className="ad-note">{resume.access === 'public' ? 'Every visitor sees the Resume button and can open it on the page.' : resume.access === 'code' ? 'The resume is encrypted. Visitors need the code you give them, and the buttons say Resume on request.' : 'All Resume buttons disappear and the file is taken off the site when you press Save. Keep your own copy. Upload it again to bring it back.'}</p>
+        {resume.access === 'code' && resume.file && <Text id="resume-code" label="Access code, at least 6 characters" value={code} onChange={setCode} />}
+        {resume.encrypted && <><Text id="resume-code" label="Current access code" value={code} onChange={setCode} /><button type="button" className="ad-btn ghost" onClick={unlock}>Unlock to change settings</button></>}
+        {resume.access !== 'private' && <><h4>Who can download it</h4>{choice('resume.download', [[true, 'Anyone who can see it'], [false, 'Nobody, view only']])}
+          {!resume.download && <p className="ad-note">This removes the Download button. A determined person could still take a screenshot of the resume.</p>}</>}
+        {mode === 'local' && <p className="ad-note">On a static host, also delete the PDF from Asset/cv before you publish. Otherwise its direct address still works.</p>}
       </>}
       {tab === 'Content' && <>
         <Group title="Hero" open>{bind('hero.wordmark', 'Header name')}{bind('hero.lettering', 'Giant background word')}{bind('hero.greeting', 'Greeting')}{bind('hero.name', 'Name')}{bind('hero.roleLines', 'Role', true)}{bind('hero.intro', 'Intro', true)}{bind('hero.location', 'Location')}{bind('hero.badge', 'Top right label')}{bind('hero.manifesto', 'Side line', true)}</Group>
         <Group title="Hero numbers"><ListEditor path="stats" config={config} change={change} blank={{ value: '', suffix: '', label: '' }} itemLabel={x => `${x.value}${x.suffix}`} fields={[['value', 'Number'], ['suffix', 'Suffix'], ['label', 'Label', true]]} /></Group>
         <Group title="Engagements"><ListEditor path="projects" config={config} change={change} blank={{ title: 'New engagement', category: 'Migration', year: '', role: '', code: '', featured: false, image: '', link: '', description: '', points: '' }} itemLabel={x => x.title} fields={[['title', 'Title'], ['category', 'Category'], ['year', 'Year'], ['role', 'Role'], ['code', 'Card label'], ['description', 'Description', true], ['points', 'Bullet points, one per line', true], ['link', 'Link']]} /></Group>
+        <Group title="Company projects"><ListEditor path="company" config={config} change={change} blank={{ title: 'New project', category: 'Company', year: '', role: '', code: '', logo: '', image: '', description: '', points: '', tags: '', link: '', linkLabel: 'Visit live site', repo: '' }} itemLabel={x => x.title} fields={[['title', 'Title'], ['category', 'Category'], ['year', 'Year'], ['role', 'Role'], ['description', 'Description', true], ['points', 'Bullet points, one per line', true], ['tags', 'Tags, separated by commas'], ['link', 'Live site link'], ['linkLabel', 'Live site button text'], ['repo', 'Public code link']]} /></Group>
+        <Group title="Planned ventures"><ListEditor path="planned" config={config} change={change} blank={{ name: 'New venture', stage: 'Planned', text: '', logo: '' }} itemLabel={x => x.name} fields={[['name', 'Name'], ['stage', 'Stage'], ['text', 'Detail', true]]} /></Group>
+        <Group title="GitHub projects"><ListEditor path="code" config={config} change={change} blank={{ title: 'New repo', text: '', tags: '', url: '' }} itemLabel={x => x.title} fields={[['title', 'Title'], ['text', 'Detail', true], ['tags', 'Tags'], ['url', 'Public repo link']]} /></Group>
         <Group title="Client names"><ListEditor path="brands" config={config} change={change} blank={{ name: 'New client', image: '' }} itemLabel={x => x.name} fields={[['name', 'Name']]} /></Group>
         <Group title="Impact numbers"><ListEditor path="impact" config={config} change={change} blank={{ value: '', title: 'New result', event: '' }} itemLabel={x => `${x.value} ${x.title}`} fields={[['value', 'Number'], ['title', 'Title'], ['event', 'Detail']]} /></Group>
         <Group title="Profile">{bind('about', 'About', true)}<Text id="f-skills" label="Skills, one per line" area value={config.skills.join('\n')} onChange={v => change('skills', v.split('\n'))} /><Text id="f-tcodes" label="T-codes, one per line" area value={config.tcodes.join('\n')} onChange={v => change('tcodes', v.split('\n'))} /></Group>
@@ -113,8 +149,7 @@ export function Admin({ config, setConfig, saved, setSaved, mode, onClose }) {
         <Group title="Process steps"><ListEditor path="process" config={config} change={change} blank={{ title: 'NEW STEP', text: '' }} itemLabel={x => x.title} fields={[['title', 'Title'], ['text', 'Detail', true]]} /></Group>
         <Group title="Experience"><ListEditor path="experience" config={config} change={change} blank={{ date: '', title: 'New role', place: '', text: '' }} itemLabel={x => x.title} fields={[['date', 'Dates'], ['title', 'Title'], ['place', 'Place'], ['text', 'Detail', true]]} /></Group>
         <Group title="Courses"><ListEditor path="courses" config={config} change={change} blank={{ title: 'New course', image: '' }} itemLabel={x => x.title} fields={[['title', 'Course name']]} /></Group>
-        <Group title="Contact">{bind('contact.email', 'Email')}{bind('contact.phone', 'Phone')}{bind('contact.linkedin', 'LinkedIn link')}{bind('contact.linkedinLabel', 'LinkedIn text')}{bind('contact.location', 'Location')}
-          <div className="ad-row"><button type="button" className="ad-btn" onClick={() => cvInput.current.click()}><FileUp size={14} /> Replace resume PDF</button><input id="cv-file" ref={cvInput} type="file" accept="application/pdf" hidden onChange={e => { cvUpload(e.target.files[0]); e.target.value = ''; }} /></div></Group>
+        <Group title="Contact">{bind('contact.email', 'Email')}{bind('contact.phone', 'Phone')}{bind('contact.linkedin', 'LinkedIn link')}{bind('contact.linkedinLabel', 'LinkedIn text')}{bind('contact.github', 'GitHub link')}{bind('contact.githubLabel', 'GitHub text')}{bind('contact.location', 'Location')}</Group>
         <Group title="Section headings">{Object.keys(defaults.headings).map(k => bind(`headings.${k}`, k.replace(/([A-Z])/g, ' $1').replace(/^./, c => c.toUpperCase()), get(config, `headings.${k}`).length > 60 || get(config, `headings.${k}`).includes('\n')))}</Group>
       </>}
       {tab === 'Theme' && <>
@@ -143,10 +178,10 @@ export function Admin({ config, setConfig, saved, setSaved, mode, onClose }) {
       {tab === 'Backup' && <>
         <h4>Move or back up your settings</h4>
         <p className="ad-note">The file holds all your text, theme, layout and images. {mode === 'local' && 'To update the live site, add it to the project folder as site-config.json.'}</p>
-        <div className="ad-stack"><button type="button" className="ad-btn" onClick={() => saveFile('site-config.json', JSON.stringify(config, null, 1), 'application/json')}><Download size={14} /> Export settings</button>
+        <div className="ad-stack"><button type="button" className="ad-btn" onClick={async () => { if (!await saveFile('site-config.json', JSON.stringify(config, null, 1), 'application/json')) setStatus('Download is not available in this view.'); }}><Download size={14} /> Export settings</button>
           <button type="button" className="ad-btn" onClick={() => importer.current.click()}><FileUp size={14} /> Import settings</button>
           <input id="import-file" ref={importer} type="file" accept="application/json,.json" hidden onChange={e => { if (e.target.files[0]) importFile(e.target.files[0]); e.target.value = ''; }} />
-          {confirmReset ? <div className="ad-row"><button type="button" className="ad-btn danger" onClick={() => { setConfig({ ...defaults }); setConfirmReset(false); setStatus('Reset to resume defaults. Press Save to keep it.'); }}>Yes, reset everything</button><button type="button" className="ad-btn ghost" onClick={() => setConfirmReset(false)}>Cancel</button></div> : <button type="button" className="ad-btn ghost" onClick={() => setConfirmReset(true)}><Undo2 size={14} /> Reset to resume defaults</button>}</div>
+          {confirmReset ? <div className="ad-row"><button type="button" className="ad-btn danger" onClick={() => { setConfig({ ...defaults, resume: config.resume }); setConfirmReset(false); setStatus('Reset to defaults. Your resume settings are unchanged. Press Save to keep it.'); }}>Yes, reset everything</button><button type="button" className="ad-btn ghost" onClick={() => setConfirmReset(false)}>Cancel</button></div> : <button type="button" className="ad-btn ghost" onClick={() => setConfirmReset(true)}><Undo2 size={14} /> Reset to resume defaults</button>}</div>
         <p className="ad-note">Settings size: {size.toFixed(2)} MB of 15 MB</p>
       </>}
     </div>

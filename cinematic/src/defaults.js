@@ -7,12 +7,14 @@ export const PRESETS = {
   paper: { label: 'Audit Paper', bg: '#f3f1ec', panel: '#e8e5dd', ink: '#17181a', muted: '#5f6064', accent: '#c81e33' },
 };
 
+export const BUNDLED_RESUME = './Asset/cv/Nitish_Chunduru_SAP_MM_Consultant_Resume.pdf';
+
 export const defaults = {
   version: 1,
   savedAt: 0,
   theme: { ...PRESETS.crimson, preset: 'crimson', display: 'Anton', body: 'Manrope', grain: true, corners: 'square' },
   layout: {
-    order: ['portfolio', 'awards', 'breakdown', 'about', 'experience', 'contact'],
+    order: ['portfolio', 'company', 'awards', 'breakdown', 'about', 'code', 'experience', 'contact'],
     hidden: [],
     density: 'regular',
     columns: 3,
@@ -53,15 +55,22 @@ export const defaults = {
     contactEyebrow: '04 / CONTACT', contactA: 'LET’S WORK', contactB: 'TOGETHER',
     contactText: 'Looking for SAP MM support?\nSend a note about the role or project.', contactCta: 'SEND AN EMAIL',
     reelA: 'SOURCE', reelB: 'TO SETTLE.', reelCaption: 'PRESS TO OPEN THE COHANCE ENGAGEMENT.',
+    companyEyebrow: 'COMPANY PROJECTS', company: 'WHAT WE ARE BUILDING AT CLIP',
+    companyPlanned: 'NEXT IN THE CLIP PORTFOLIO',
+    codeEyebrow: 'GITHUB', code: 'PUBLIC CODE AND PROJECTS',
     footer: 'SAP MM CONSULTANT.',
   },
   about: 'SAP MM (Materials Management) Consultant with hands-on SAP S/4HANA experience, including onsite plant-level support as part of an 18+ member cross-functional migration team at Cohance Lifesciences, and material master data classification for Piramal Pharma. Completed SAP Learning’s Introduction to AI Core.',
   contact: {
     email: 'chundurunitish2001@gmail.com', phone: '+91 8074300526',
     linkedin: 'https://linkedin.com/in/nitish-chunduru', linkedinLabel: 'linkedin.com/in/nitish-chunduru',
+    github: 'https://github.com/nitishchunduru', githubLabel: 'github.com/nitishchunduru',
     location: 'Hyderabad, Telangana, India',
   },
-  cv: './Asset/cv/Nitish_Chunduru_SAP_MM_Consultant_Resume.pdf',
+  resume: {
+    file: BUNDLED_RESUME, name: 'Nitish_Chunduru_SAP_MM_Consultant_Resume.pdf', updated: 'June 2026',
+    access: 'public', download: true, encrypted: null, bundledRemoved: false,
+  },
   education: [
     { title: 'Bapatla Engineering College', meta: '2019 – 2023', text: 'B.Tech, Computer Science and Engineering. Bapatla, Andhra Pradesh. CGPA 7.0 out of 10.' },
     { title: 'ProvenTech Consulting Pvt Ltd', meta: '2025 – 2026', text: 'SAP MM Trainee Consultant, Hyderabad.' },
@@ -94,6 +103,33 @@ export const defaults = {
   brands: [
     { name: 'Cohance Lifesciences', image: '' }, { name: 'Suven', image: '' }, { name: 'Piramal Pharma', image: '' }, { name: 'ProvenTech Consulting', image: '' },
   ],
+  company: [
+    { id: 'clip', title: 'CLIP Platform', category: 'Company', year: '2026', role: 'Website and CLIP HQ', code: 'CLIP', logo: './Asset/img/company/clip.png', image: '',
+      description: 'The public website and internal operations platform for CLIP, an India-based technology and venture company. In testing ahead of a custom domain and public launch.',
+      points: 'Public site covering the company, ventures, careers, insights and roadmap\nCLIP HQ staff workspace with hiring, enquiries, people, leave and an audit log\nEmail sign-in, required two-step verification and six staff roles checked on the server\nWebsite and HQ assistants that answer only from approved content',
+      tags: 'Next.js, React, TypeScript, PostgreSQL, Vercel', link: 'https://clip-platform-kohl.vercel.app', linkLabel: 'Visit live site', repo: '' },
+    { id: 'ananda', title: 'Ananda Nilayam Constructions', category: 'Real estate', year: '2026', role: 'Business website and admin', code: 'ANC', logo: './Asset/img/company/ananda-nilayam.svg', image: '',
+      description: 'A construction and real estate website with a staff admin area.',
+      points: 'Public pages for services, projects, gallery, real estate, rentals and careers\nContact, quote, newsletter and employee application workflows\nRole-gated admin for inquiries and site settings',
+      tags: 'Next.js, Supabase, TypeScript, Vercel', link: 'https://v0-ananda-nilayam-constructions.vercel.app', linkLabel: 'Visit live site', repo: '' },
+    { id: 'jackpot', title: 'Card Jackpot: IN BTW', category: 'Gaming', year: '2026', role: 'Multiplayer game server', code: 'IN BTW', logo: './Asset/img/company/card-jackpot.svg', image: '',
+      description: 'A multi-level family card game for ages 12 and up, played with virtual credits. A local release candidate, not yet deployed.',
+      points: 'Rules engine with an authoritative multiplayer server over WebSockets\nThe server handles shuffling, dealing, turns and settlement, and clients send intents only\nEach player receives only their own view, so other players\u2019 unrevealed cards stay hidden\nPostgreSQL persistence with crash and restart recovery',
+      tags: 'TypeScript, Node.js, WebSockets, PostgreSQL', link: '', linkLabel: '', repo: '' },
+    { id: 'couponhub', title: 'CouponHub', category: 'Consumer', year: 'Planned', role: 'CLIP venture', code: 'COUPON', logo: './Asset/img/company/couponhub.svg', image: '',
+      description: 'A members-only way to bring unused vouchers, coupons and tickets back into use. This describes the product design.',
+      points: '', tags: 'Consumer, Marketplace', link: '', linkLabel: '', repo: 'https://github.com/nitishchunduru/CouponHub' },
+  ],
+  planned: [
+    { name: 'STUFF', stage: 'Upcoming', text: 'Food, beverages and everyday essentials delivery.', logo: './Asset/img/company/stuff.svg' },
+    { name: 'Fuel and Feed', stage: 'Planned', text: 'Fuel for the vehicle and food for the people, in one stop on the road.', logo: './Asset/img/company/fuel-and-feed.svg' },
+    { name: 'Ratna', stage: 'Exploring', text: 'A blockchain and digital-currency technology exploration.', logo: './Asset/img/company/ratna.svg' },
+  ],
+  code: [
+    { title: 'AI Chatbot for Supplier and Product Information', text: 'React front end for a chatbot application covering supplier and product information.', tags: 'React', url: 'https://github.com/nitishchunduru/AI-Powered-Chatbot-for-Supplier-and-Product-Information' },
+    { title: 'CouponHub', text: 'Early web prototype for the coupon idea, built with JavaScript, Bootstrap and Mongoose.', tags: 'JavaScript, Mongoose', url: 'https://github.com/nitishchunduru/CouponHub' },
+    { title: 'Leaf Disease Detection and Recognition', text: 'B.Tech final-year team project report, Computer Science and Engineering.', tags: 'Academic project', url: 'https://github.com/nitishchunduru/Leaf-Disease-Detection-and-Recognition' },
+  ],
   impact: [
     { value: '30+', title: 'Functional test cases', event: 'PO and SO scenarios, including output form and pricing triggers' },
     { value: '15+', title: 'Post go-live issues resolved', event: 'PO outputs, Goods Issues and Goods Receipt Notes' },
@@ -116,14 +152,16 @@ export const defaults = {
   ],
 };
 
-export const SECTION_LABELS = { portfolio: 'Engagements', awards: 'Impact', breakdown: 'Before / after', about: 'Profile', experience: 'Experience', contact: 'Contact' };
+export const SECTION_LABELS = { portfolio: 'Engagements', company: 'Company projects', code: 'GitHub projects', awards: 'Impact', breakdown: 'Before / after', about: 'Profile', experience: 'Experience', contact: 'Contact' };
 
 // Older saved files keep working when new settings appear later.
 export function merge(saved) {
   if (!saved || typeof saved !== 'object') return defaults;
   const out = { ...defaults, ...saved };
-  for (const key of ['theme', 'layout', 'scene', 'images', 'hero', 'headings', 'contact']) out[key] = { ...defaults[key], ...(saved[key] || {}) };
+  for (const key of ['theme', 'layout', 'scene', 'images', 'hero', 'headings', 'contact', 'resume']) out[key] = { ...defaults[key], ...(saved[key] || {}) };
+  if (saved.cv && !saved.resume) out.resume = { ...out.resume, file: saved.cv };
   const known = out.layout.order.filter(id => SECTION_LABELS[id]);
-  out.layout.order = [...known, ...defaults.layout.order.filter(id => !known.includes(id))];
+  defaults.layout.order.forEach((id, i) => { if (!known.includes(id)) known.splice(i, 0, id); });
+  out.layout.order = known;
   return out;
 }

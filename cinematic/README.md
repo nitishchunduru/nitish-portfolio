@@ -13,11 +13,21 @@ A static one-page portfolio with an in-page admin panel and three.js scenes. It 
 Open the site with `#admin` at the end of the address, for example `http://localhost:4173/#admin`.
 
 - **Images:** portrait, engagement images, before/after slider, client logos, certificates
-- **Content:** every text, list and number, plus the resume PDF
+- **Resume:** upload, replace or remove the PDF, and choose who can see and download it
+- **Content:** every text, list and number, including company and GitHub projects
 - **Theme:** five presets, custom colors, fonts, corners, film grain
 - **Layout:** section order and visibility, hero media, work columns, spacing
 - **3D:** scene choice, speed, stock level, card tilt
 - **Backup:** export, import and reset
+
+## Resume access
+
+- **Everyone:** all visitors can open the resume on the page.
+- **Access code:** the PDF is encrypted with AES-GCM before saving. Visitors need the code.
+- **Nobody:** the Resume buttons disappear and the file is removed from the site on Save.
+- **View only:** removes the Download button. Screenshots are still possible.
+
+On a static host, also delete the PDF from `Asset/cv` and from the repo history if it must stay private. A file that stays in the folder keeps its direct address.
 
 ## Updating a static host
 

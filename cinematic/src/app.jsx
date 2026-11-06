@@ -1,16 +1,18 @@
 import React, { useState, useEffect, useRef, useContext, createContext } from 'react';
 import { createRoot } from 'react-dom/client';
 import { motion, AnimatePresence, MotionConfig, useScroll, useTransform, useSpring, useMotionValue, useReducedMotion, useMotionValueEvent, useAnimationFrame, useInView } from 'framer-motion';
-import { ArrowUpRight, ArrowDown, ArrowRight, Play, X, Menu, Mail, Phone, MapPin, Linkedin, Download, Pause, Search, Plus, Minus, ChevronLeft, ChevronRight, ExternalLink, Settings2, Copy } from 'lucide-react';
+import { ArrowUpRight, ArrowDown, ArrowRight, Play, X, Menu, Mail, Phone, MapPin, Linkedin, Download, Pause, Search, Plus, Minus, ChevronLeft, ChevronRight, ExternalLink, Settings2, Copy, Github, Lock, FileText } from 'lucide-react';
 import './.generated.css';
 import { defaults, SECTION_LABELS } from './defaults.js';
-import { loadConfig, canEditPage, downloadCv } from './storage.js';
+import { loadConfig, canEditPage } from './storage.js';
+import { ResumeDialog, resumeOpen } from './resume.jsx';
 import { createScene } from './scene3d.js';
 import { projectArt, beforeArt, afterArt } from './art.js';
 import { Admin } from './admin.jsx';
 
 const MotionContext = createContext(true);
 const Config = createContext(defaults);
+const ResumeAction = createContext(() => {});
 const useConfig = () => useContext(Config);
 const EASE = [0.22, 1, 0.36, 1];
 const lines = (s = '') => String(s).split('\n').map((l, i) => <React.Fragment key={i}>{i > 0 && <br />}{l}</React.Fragment>);
@@ -19,7 +21,7 @@ const mix = (a, b, t) => {
   const [x, y] = [p(a), p(b)];
   return '#' + x.map((v, i) => Math.round(v + (y[i] - v) * t).toString(16).padStart(2, '0')).join('');
 };
-const NAV = { portfolio: 'Work', awards: 'Impact', about: 'Profile', experience: 'Experience', contact: 'Contact' };
+const NAV = { portfolio: 'Work', company: 'Company', awards: 'Impact', about: 'Profile', experience: 'Experience', contact: 'Contact' };
 
 function Reveal({ children, className = '', delay = 0, as = 'div' }) {
   const enabled = useContext(MotionContext);
@@ -90,6 +92,7 @@ function Header({ enabled, onToggle, sections, admin, onAdmin }) {
 function Hero({ onProject, sections }) {
   const cfg = useConfig();
   const { hero, stats, images, layout, scene, projects } = cfg;
+  const openResume = useContext(ResumeAction);
   const ref = useRef(null);
   const enabled = useContext(MotionContext);
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end start'] });
@@ -111,13 +114,14 @@ function Hero({ onProject, sections }) {
     </motion.div>
     <motion.div className="hero-side" initial={enabled ? { opacity: 0, x: 30 } : false} animate={{ opacity: 1, x: 0 }} transition={{ duration: 1, delay: 0.55, ease: EASE }}>
       <div className="hero-manifesto"><span className="crosshair" aria-hidden="true">✳</span><p>{lines(hero.manifesto)}</p></div>
-      <div className="hero-stats">{stats.map((s, i) => <div key={i}><span className="display">{s.value}<span>{s.suffix}</span></span><p>{lines(s.label)}</p></div>)}<a href={cfg.cv} onClick={e => { e.preventDefault(); downloadCv(cfg.cv); }}><Download size={16} /><span>DOWNLOAD RESUME</span></a></div>
+      <div className="hero-stats">{stats.map((s, i) => <div key={i}><span className="display">{s.value}<span>{s.suffix}</span></span><p>{lines(s.label)}</p></div>)}{resumeOpen(cfg.resume) && <button type="button" className="hero-link" onClick={openResume}>{cfg.resume.access === 'code' ? <Lock size={16} /> : <FileText size={16} />}<span>{cfg.resume.access === 'code' ? 'RESUME ON REQUEST' : 'VIEW RESUME'}</span></button>}<a className="hero-link" href={cfg.contact.github} target="_blank" rel="noopener noreferrer"><Github size={16} /><span>GITHUB PROFILE</span></a></div>
     </motion.div>
     <div className="hero-bottom"><button className="reel-button" onClick={() => onProject(projects[0])}><span className="play-circle"><Play size={12} fill="currentColor" /></span>{hero.reel}<span className="muted">{hero.reelTag}</span></button><span className="hero-scroll">SCROLL TO DISCOVER <ArrowDown size={13} /></span><span className="edition">{hero.edition}</span></div>
   </section>;
 }
 
-const artFor = (project, cfg) => project.image || projectArt(project, Math.max(0, cfg.projects.findIndex(p => p.id === project.id)), cfg.theme);
+const artFor = (project, cfg) => project.image || project.logo || projectArt(project, Math.max(0, cfg.projects.findIndex(p => p.id === project.id)), cfg.theme);
+const logoOnly = p => !p.image && !!p.logo;
 
 function ProjectCard({ project, index, onOpen }) {
   const cfg = useConfig();
@@ -132,7 +136,7 @@ function ProjectCard({ project, index, onOpen }) {
       if (!tilt || e.pointerType !== 'mouse') return;
       const r = e.currentTarget.getBoundingClientRect();
       ry.set(((e.clientX - r.left) / r.width - .5) * 12); rx.set(((e.clientY - r.top) / r.height - .5) * -10);
-    }} onPointerLeave={() => { rx.set(0); ry.set(0); }} onClick={() => onOpen(project)} aria-label={`Open ${project.title}`}><motion.div className="project-picture" style={enabled ? { y } : {}}><MediaImage src={artFor(project, cfg)} alt="" /></motion.div><span className="project-type">{project.category.toUpperCase()}</span><span className="project-hover"><ArrowUpRight size={22} /></span><span className="project-frame" aria-hidden="true" /></motion.button>
+    }} onPointerLeave={() => { rx.set(0); ry.set(0); }} onClick={() => onOpen(project)} aria-label={`Open ${project.title}`}><motion.div className={`project-picture ${logoOnly(project) ? 'logo-art' : ''}`} style={enabled ? { y } : {}}><MediaImage src={artFor(project, cfg)} alt="" /></motion.div><span className="project-type">{project.category.toUpperCase()}</span><span className="project-hover"><ArrowUpRight size={22} /></span><span className="project-frame" aria-hidden="true" /></motion.button>
     <button className="project-caption" onClick={() => onOpen(project)}><span className="project-number display">{String(index + 1).padStart(2, '0')}</span><span><h3>{project.title}</h3><span className="project-category">{project.category}{project.year ? ` / ${project.year}` : ''}</span></span><ArrowUpRight size={20} /></button>
   </motion.article>;
 }
@@ -193,6 +197,23 @@ function Portfolio({ onProject }) {
   </section>;
 }
 
+function Company({ onProject }) {
+  const { company, planned, headings: h } = useConfig();
+  return <section id="company" className="section-wrap company">
+    <Reveal className="section-heading"><div><span className="eyebrow">{h.companyEyebrow}</span><h2>{h.company}<span className="accent">.</span></h2></div></Reveal>
+    <div className="project-grid company-grid">{company.map((p, i) => <ProjectCard key={p.id || p.title} project={p} index={i} onOpen={onProject} />)}</div>
+    {planned.length > 0 && <Reveal className="planned"><p className="eyebrow">{h.companyPlanned}</p><div className="planned-list">{planned.map(v => <div key={v.name}>{v.logo && <img src={v.logo} alt="" loading="lazy" width="44" height="44" />}<span><strong>{v.name}</strong><small>{v.stage}</small><p>{v.text}</p></span></div>)}</div></Reveal>}
+  </section>;
+}
+
+function Code() {
+  const { code, headings: h, contact } = useConfig();
+  return <section id="code" className="section-wrap code-section">
+    <Reveal className="section-heading"><div><span className="eyebrow">{h.codeEyebrow}</span><h2>{h.code}<span className="accent">.</span></h2></div><a className="text-link" href={contact.github} target="_blank" rel="noopener noreferrer">GITHUB PROFILE<Github size={16} /></a></Reveal>
+    <div className="code-list">{code.map(r => <Reveal key={r.title}><a className="code-row" href={r.url} target="_blank" rel="noopener noreferrer"><span><h3>{r.title}</h3><p>{r.text}</p><small>{r.tags}</small></span><ArrowUpRight size={20} /></a></Reveal>)}</div>
+  </section>;
+}
+
 function Awards({ onProject }) {
   const { impact, headings, projects } = useConfig();
   const [expanded, setExpanded] = useState(false);
@@ -245,10 +266,11 @@ function About() {
 }
 
 function Journey({ onProject }) {
-  const { experience, courses, headings: h, cv } = useConfig();
+  const { experience, courses, headings: h, resume } = useConfig();
+  const openResume = useContext(ResumeAction);
   const [open, setOpen] = useState(0);
   return <section id="experience" className="journey section-wrap">
-    <Reveal className="section-heading"><div><span className="eyebrow">{h.journeyEyebrow}</span><h2>{h.journey}<span className="accent">.</span></h2></div><a className="text-link" href={cv} onClick={e => { e.preventDefault(); downloadCv(cv); }}>RESUME<Download size={16} /></a></Reveal>
+    <Reveal className="section-heading"><div><span className="eyebrow">{h.journeyEyebrow}</span><h2>{h.journey}<span className="accent">.</span></h2></div>{resumeOpen(resume) && <button type="button" className="text-link" onClick={openResume}>RESUME<ArrowUpRight size={16} /></button>}</Reveal>
     <div className="journey-grid"><div className="experience-list">{experience.map((job, i) => <Reveal className={`experience-row ${open === i ? 'is-open' : ''}`} key={i}><button aria-expanded={open === i} aria-controls={`job-${i}`} onClick={() => setOpen(open === i ? null : i)}><span className="experience-date">{job.date}</span><span><h3>{job.title}</h3><span className="experience-place">{job.place}</span></span>{open === i ? <Minus size={18} /> : <Plus size={18} />}</button><AnimatePresence initial={false}>{open === i && <motion.div id={`job-${i}`} initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.35, ease: EASE }}><p>{job.text}</p></motion.div>}</AnimatePresence></Reveal>)}</div>
       <Reveal className="awards-panel"><p className="eyebrow">{h.milestonesEyebrow}</p><h3 className="display">{h.milestonesA}<br /><span className="accent">{h.milestonesB}</span></h3><div className="award-list">{courses.map((c, i) => c.image ? <button key={i} onClick={() => onProject({ title: c.title, image: c.image, category: 'SAP Learning', description: 'Completed on SAP Learning.' })}><span>{String(i + 1).padStart(2, '0')}</span><span>{c.title}</span><ArrowUpRight size={19} /></button> : <div className="course-row" key={i}><span>{String(i + 1).padStart(2, '0')}</span><span>{c.title}</span></div>)}</div></Reveal></div>
   </section>;
@@ -268,7 +290,7 @@ function Contact({ onProject }) {
   };
   return <section id="contact" className="contact section-wrap">
     <div className="contact-grid"><Reveal className="contact-intro"><span className="eyebrow">{h.contactEyebrow}</span><h2 className="display">{h.contactA}<br />{h.contactB}<span className="accent">.</span></h2><p>{lines(h.contactText)}</p><Magnetic href={`mailto:${contact.email}`} className="contact-cta"><span className="round-arrow"><ArrowUpRight size={21} /></span>{h.contactCta}</Magnetic></Reveal>
-      <Reveal className="contact-links" delay={0.1}><a href={`mailto:${contact.email}`}><Mail /><span><small>EMAIL</small>{contact.email}</span><ArrowUpRight size={16} /></a><a href={contact.linkedin} target="_blank" rel="noopener noreferrer"><Linkedin /><span><small>LINKEDIN</small>{contact.linkedinLabel}</span><ArrowUpRight size={16} /></a><a href={`tel:${contact.phone.replace(/\s/g, '')}`}><Phone /><span><small>PHONE</small>{contact.phone}</span><ArrowUpRight size={16} /></a><div><MapPin /><span><small>BASED IN</small>{contact.location}</span></div></Reveal>
+      <Reveal className="contact-links" delay={0.1}><a href={`mailto:${contact.email}`}><Mail /><span><small>EMAIL</small>{contact.email}</span><ArrowUpRight size={16} /></a><a href={contact.linkedin} target="_blank" rel="noopener noreferrer"><Linkedin /><span><small>LINKEDIN</small>{contact.linkedinLabel}</span><ArrowUpRight size={16} /></a><a href={contact.github} target="_blank" rel="noopener noreferrer"><Github /><span><small>GITHUB</small>{contact.githubLabel}</span><ArrowUpRight size={16} /></a><a href={`tel:${contact.phone.replace(/\s/g, '')}`}><Phone /><span><small>PHONE</small>{contact.phone}</span><ArrowUpRight size={16} /></a><div><MapPin /><span><small>BASED IN</small>{contact.location}</span></div></Reveal>
       <Reveal className="contact-reel" delay={0.2}><button onClick={() => onProject(projects[0])} aria-label={`Open ${projects[0]?.title}`}><div className="reel-screen"><span className="reel-screen-top">P2P<span>ME21N / MIGO / MIRO</span></span>{scene.enabled && scene.contact && <Scene kind="flow" zoom={.8} />}<span className="reel-screen-title display">{h.reelA}<br /><span>{h.reelB}</span></span><span className="play-circle"><Play size={18} fill="currentColor" /></span></div><span className="reel-caption">{h.reelCaption}</span></button></Reveal></div>
     <Reveal><details className="project-brief"><summary>Write me a message <Plus size={19} /></summary><form onSubmit={send}><label htmlFor="brief-name">Your name<input id="brief-name" name="name" required placeholder="Name or company" autoComplete="name" maxLength="100" /></label><label htmlFor="brief-type">Topic<select id="brief-type" name="type"><option>SAP MM role</option><option>S/4HANA migration support</option><option>Master data work</option><option>Something else</option></select></label><label className="brief-message" htmlFor="brief-message">Message<textarea id="brief-message" name="message" required rows="3" placeholder="Tell me about the role or project…" maxLength="3000" /></label><button className="solid-button" type="submit">Copy my message <Copy size={18} /></button><p className="form-note" role="status">{note || 'Your message is prepared here, then you send it from your own email.'}</p>{draft && <textarea id="brief-draft" className="brief-message" readOnly rows="4" value={draft} aria-label="Your message" />}</form></details></Reveal>
   </section>;
@@ -299,13 +321,13 @@ function ProjectDialog({ project, onClose }) {
   return <motion.div className="dialog-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
     <motion.div ref={ref} className="project-dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title" tabIndex="-1" initial={enabled ? { y: 45, scale: 0.97 } : false} animate={{ y: 0, scale: 1 }} exit={{ y: 20, opacity: 0 }} transition={{ duration: 0.35, ease: EASE }}>
       <div className="dialog-heading"><span className="eyebrow">{project.category} {project.year && ` / ${project.year}`}</span><button onClick={onClose} className="icon-button" aria-label="Close"><X /></button></div>
-      <div className="dialog-media still"><MediaImage src={artFor(project, cfg)} alt={project.title} /></div>
-      <div className="dialog-description"><div><h2 id="dialog-title">{project.title}</h2>{project.role && <span className="accent">{project.role}</span>}<p>{project.description}</p>{points.length > 0 && <ul className="dialog-points">{points.map((p, i) => <li key={i}>{p}</li>)}</ul>}</div>{project.link && <a className="outline-button" href={project.link} target="_blank" rel="noopener noreferrer">Open link<ExternalLink size={15} /></a>}</div>
+      <div className={`dialog-media still ${logoOnly(project) ? 'logo-art' : ''}`}><MediaImage src={artFor(project, cfg)} alt={project.title} /></div>
+      <div className="dialog-description"><div><h2 id="dialog-title">{project.title}</h2>{project.role && <span className="accent">{project.role}</span>}<p>{project.description}</p>{points.length > 0 && <ul className="dialog-points">{points.map((p, i) => <li key={i}>{p}</li>)}</ul>}{project.tags && <div className="skill-tags dialog-tags">{project.tags.split(',').map(t => <span key={t}>{t.trim()}</span>)}</div>}</div><div className="dialog-links">{project.link && <a className="outline-button" href={project.link} target="_blank" rel="noopener noreferrer">{project.linkLabel || 'Open link'}<ExternalLink size={15} /></a>}{project.repo && <a className="outline-button" href={project.repo} target="_blank" rel="noopener noreferrer">View code<Github size={15} /></a>}</div></div>
     </motion.div>
   </motion.div>;
 }
 
-const SECTIONS = { portfolio: Portfolio, awards: Awards, breakdown: Breakdown, about: About, experience: Journey, contact: Contact };
+const SECTIONS = { portfolio: Portfolio, company: Company, code: Code, awards: Awards, breakdown: Breakdown, about: About, experience: Journey, contact: Contact };
 
 function applyTheme(cfg) {
   const { theme, layout } = cfg, root = document.documentElement, s = root.style;
@@ -326,6 +348,7 @@ function App() {
   const [motionOn, setMotionOn] = useState(() => { try { return localStorage.getItem('nitish-motion') !== 'off'; } catch { return true; } });
   const enabled = motionOn && !reduced;
   const [project, setProject] = useState(null);
+  const [resumeShown, setResumeShown] = useState(false);
   const { scrollYProgress } = useScroll();
   const progress = useSpring(scrollYProgress, { stiffness: 100, damping: 28, restDelta: 0.001 });
   useEffect(() => {
@@ -339,7 +362,7 @@ function App() {
   const toggle = () => { setMotionOn(!motionOn); try { localStorage.setItem('nitish-motion', motionOn ? 'off' : 'on'); } catch {} };
   const close = React.useCallback(() => setProject(null), []);
   const sections = config.layout.order.filter(id => !config.layout.hidden.includes(id));
-  return <Config.Provider value={config}><MotionContext.Provider value={enabled}>
+  return <Config.Provider value={config}><ResumeAction.Provider value={() => setResumeShown(true)}><MotionContext.Provider value={enabled}>
     <MotionConfig reducedMotion={enabled ? 'user' : 'always'} transition={{ ease: EASE }}>
       <a className="skip-link" href="#portfolio">Skip to work</a>
       <motion.div className="reading-progress" style={{ scaleX: enabled ? progress : scrollYProgress }} />
@@ -352,14 +375,16 @@ function App() {
         <a className="wordmark" href="#home">{config.hero.wordmark}<span>®</span></a>
         <span>© {new Date().getFullYear()} NITISH CHUNDURU. {config.headings.footer}</span>
         <div>
+          <a href={config.contact.github} target="_blank" rel="noopener noreferrer" aria-label="GitHub"><Github size={17} /></a>
           <a href={config.contact.linkedin} target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><Linkedin size={17} /></a>
           <a href="#home" aria-label="Back to top"><ArrowUpRight size={18} /></a>
         </div>
       </footer>
       <AnimatePresence>{project && <ProjectDialog key={project.title} project={project} onClose={close} />}</AnimatePresence>
+      {resumeShown && <ResumeDialog resume={config.resume} onClose={() => setResumeShown(false)} />}
       {adminOpen && <Admin config={config} setConfig={setConfig} saved={saved} setSaved={setSaved} mode={adminMode} onClose={() => { setAdminOpen(false); if (location.hash === '#admin') history.replaceState(null, '', ' '); }} />}
     </MotionConfig>
-  </MotionContext.Provider></Config.Provider>;
+  </MotionContext.Provider></ResumeAction.Provider></Config.Provider>;
 }
 
 createRoot(document.getElementById('root')).render(<App />);

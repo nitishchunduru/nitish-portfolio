@@ -1,4 +1,4 @@
-import { merge } from './defaults.js';
+import { merge, BUNDLED_RESUME } from './defaults.js';
 
 const inViewer = () => typeof window.claude?.use === 'function';
 const useCap = async name => { try { return inViewer() ? await window.claude.use(name) : null; } catch { return null; } };
@@ -44,11 +44,19 @@ export async function saveConfig(config) {
     return ok ? { next, where: 'browser' } : { next, error: 'This browser blocked saving. Use Export to keep your changes.' };
   }
   try {
-    await artifact.publish({ 'site-config.json': { content: JSON.stringify(next), contentType: 'application/json' } });
+    const dropFile = next.resume.file !== BUNDLED_RESUME && !next.resume.bundledRemoved;
+    if (dropFile) next.resume = { ...next.resume, bundledRemoved: true };
+    const files = { 'site-config.json': { content: JSON.stringify(next), contentType: 'application/json' } };
+    if (dropFile) files[BUNDLED_RESUME.slice(2)] = null;
+    await artifact.publish(files);
     return { next, where: 'live' };
   } catch (e) {
     if (e?.code === 'capability_disabled') {
-      try { await artifact.publish(shell(next)); return { next, where: 'live' }; } catch (e2) { e = e2; }
+      try {
+        const kept = next.resume.bundledRemoved && next.resume.file !== BUNDLED_RESUME;
+        await artifact.publish(shell({ ...next, resume: { ...next.resume, bundledRemoved: false } }));
+        return { next, where: 'live', warning: kept ? 'Saved, but the old resume file could not be deleted while the page is publicly shared. Stop public sharing, then save again.' : '' };
+      } catch (e2) { e = e2; }
     }
     if (e?.code === 'conflict') return { next, error: 'A newer version was saved elsewhere, so this page is reloading to it.' };
     if (e?.code === 'too_large') return { next, error: 'The images are too large to save. Remove one or upload a smaller file.' };
@@ -58,19 +66,44 @@ export async function saveConfig(config) {
 }
 
 export async function saveFile(filename, data, type) {
-  const downloads = await useCap('downloads');
   const blob = data instanceof Blob ? data : new Blob([data], { type });
-  if (downloads) {
-    await downloads.save({ filename, data: blob }).catch(() => {});
-    return;
+  if (inViewer()) {
+    const downloads = await useCap('downloads');
+    if (!downloads) return false;
+    try { await downloads.save({ filename, data: blob }); return true; } catch { return false; }
   }
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename; a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  return true;
 }
 
-export async function downloadCv(url) {
-  const blob = await (await fetch(url)).blob();
-  await saveFile('Nitish_Chunduru_SAP_MM_Consultant_Resume.pdf', blob, 'application/pdf');
+export async function fileBytes(url) {
+  if (url.startsWith('data:')) {
+    const raw = atob(url.slice(url.indexOf(',') + 1));
+    return Uint8Array.from(raw, c => c.charCodeAt(0));
+  }
+  const r = await fetch(url);
+  if (!r.ok) throw new Error('missing');
+  return new Uint8Array(await r.arrayBuffer());
+}
+
+const b64 = bytes => { let s = ''; for (let i = 0; i < bytes.length; i += 32768) s += String.fromCharCode(...bytes.subarray(i, i + 32768)); return btoa(s); };
+const unb64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+export const toDataUrl = bytes => `data:application/pdf;base64,${b64(bytes)}`;
+const keyFrom = async (code, salt) => crypto.subtle.deriveKey(
+  { name: 'PBKDF2', salt, iterations: 250000, hash: 'SHA-256' },
+  await crypto.subtle.importKey('raw', new TextEncoder().encode(code), 'PBKDF2', false, ['deriveKey']),
+  { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+
+export async function lockResume(bytes, code) {
+  const salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12));
+  const data = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, await keyFrom(code, salt), bytes);
+  return { salt: b64(salt), iv: b64(iv), data: b64(new Uint8Array(data)) };
+}
+
+export async function unlockResume(box, code) {
+  const out = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(box.iv) }, await keyFrom(code, unb64(box.salt)), unb64(box.data));
+  return new Uint8Array(out);
 }
 
 export function imageToDataUrl(file, maxEdge = 1500) {

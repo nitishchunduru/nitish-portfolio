@@ -1,5 +1,5 @@
 import { build } from 'esbuild';
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, copyFileSync } from 'node:fs';
 
 // The template stylesheet stays intact apart from fixed colours, which become
 // theme tokens so every Admin theme reaches every surface.
@@ -40,6 +40,14 @@ await build({
   define: { 'process.env.NODE_ENV': '"production"', __PAGE_BODY__: JSON.stringify(body) },
 });
 
+copyFileSync('node_modules/pdfjs-dist/build/pdf.worker.min.js', 'Asset/dist/pdf.worker.min.js');
+
+const seo = {
+  '@context': 'https://schema.org', '@type': 'Person', name: 'Nitish Chunduru', jobTitle: 'SAP MM Consultant',
+  address: { '@type': 'PostalAddress', addressLocality: 'Hyderabad', addressRegion: 'Telangana', addressCountry: 'IN' },
+  sameAs: ['https://github.com/nitishchunduru', 'https://linkedin.com/in/nitish-chunduru'],
+  knowsAbout: ['SAP MM', 'SAP S/4HANA', 'Procure-to-Pay', 'Inventory Management', 'Material Master Data'],
+};
 // Static hosting entry point.
 writeFileSync('index.html', `<!doctype html>
 <html lang="en">
@@ -48,7 +56,12 @@ writeFileSync('index.html', `<!doctype html>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#090909">
 <meta name="description" content="Nitish Chunduru, SAP MM Consultant. SAP S/4HANA, Procure-to-Pay, inventory management and material master data.">
+<meta property="og:type" content="profile">
+<meta property="og:title" content="Nitish Chunduru | SAP MM Consultant">
+<meta property="og:description" content="SAP S/4HANA, Procure-to-Pay, inventory management and material master data.">
+<meta name="twitter:card" content="summary">
 <link rel="icon" href="./Asset/img/favicon.svg" type="image/svg+xml">
+<script type="application/ld+json">${JSON.stringify(seo)}</script>
 ${body.replace('<div id="root"></div>', '</head>\n<body>\n<div id="root"></div>')}
 </body>
 </html>
